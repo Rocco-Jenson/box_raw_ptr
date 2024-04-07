@@ -155,7 +155,7 @@ pub mod const_raw_ptr {
         /// ```
         pub fn ref_const(&self) -> Option<&T> {
             if !self.const_ptr.is_null() {
-                Some( unsafe { & **self.const_ptr } )
+                Some( unsafe { & **self.const_ptr} )
             } else {
                 None
             }
