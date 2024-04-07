@@ -1,0 +1,14 @@
+[package]
+name = "box_raw_ptr"
+version = "0.1.0"
+authors = ["Rocco Jenson roccojenson35@gmail.com"]
+description = "A Rust library providing safe wrappers for working with raw pointers, specifically `*const T` and `*mut T`. These wrappers ensure memory safety by encapsulating the raw pointers in safe abstractions and providing safe methods for working with them."
+license = "MIT/Apache-2.0"
+license-file = "LICENSE"
+# documentation = "https://docs.rs/your_crate_name"
+# homepage = "https://github.com/your_username/your_crate_name"
+# repository = "https://github.com/your_username/your_crate_name"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
