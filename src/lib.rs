@@ -32,7 +32,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.1.0"
+//! box_raw_ptr = "0.1.6"
 //! ```
 //!
 //! ## License
@@ -42,7 +42,7 @@
 //! ## Contributions
 //!
 //! Contributions are welcome! Please feel free to submit a pull request or open an issue
-//! on the [GitHub repository](https://github.com/yourusername/yourrepository).
+//! on the [GitHub repository](https://github.com/Rocco-Jenson/box_raw_ptr).
 //!
 //! ```
 //!
@@ -63,190 +63,379 @@
 //! ```
 
 
-pub mod box_raw_ptr {
-    pub mod const_raw_ptr {
-        /// A wrapper for `*const T` providing methods for safely working with constant raw pointers.
-        pub struct ConstRawPtr<T> 
-        where T: std::fmt::Debug, T: std::marker::Send, T: std::marker::Sync, T: core::marker::Copy
-        {
-            const_ptr: Box<*const T>,
+
+pub mod const_raw_ptr {
+    /// A wrapper for `*const T` providing methods for safely working with constant raw pointers.
+    pub struct ConstRawPtr<T> 
+    where T: std::fmt::Debug, T: std::marker::Send, T: std::marker::Sync, T: core::marker::Copy
+    {
+        const_ptr: Box<*const T>,
+    }
+
+    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> ConstRawPtr<T> {
+        /// Constructs a new `ConstRawPtr<T>` instance with the given constant raw pointer.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        /// ```
+        pub fn new_const_ptr(ptr: *const T) -> Self {
+            Self { const_ptr: Box::new(ptr) }
         }
-
-        impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> ConstRawPtr<T> {
-            /// Constructs a new `ConstRawPtr<T>` instance with the given constant raw pointer.
-            pub fn new_const_ptr(ptr: *const T) -> Self {
-                Self { const_ptr: Box::new(ptr) }
-            }
-            
-            /// Constructs a new `ConstRawPtr<T>` instance with a null constant raw pointer.
-            pub fn const_null_ptr() -> Self {
-                Self { const_ptr: Box::new(std::ptr::null()) }
-            }
-            
-            /// Returns the raw pointer if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-            pub fn unbox_const(&self) -> Option<*const T> {
-                if !self.const_ptr.is_null() {
-                    Some(*self.const_ptr)
-                } else {
-                    None
-                }
-            }
-
-            /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-            pub fn unwrap_const(self) -> Option<T> {
-                if !self.const_ptr.is_null() {
-                    Some( unsafe { **self.const_ptr } )
-                } else {
-                    None
-                }
-            }
-
-            /// Returns a reference to the value pointed to by the constant raw pointer, wrapped in an `Option`.
-            /// Returns `None` if the pointer is null.
-            pub fn ref_const(&self) -> Option<&T> {
-                if !self.const_ptr.is_null() {
-                    Some( unsafe { & **self.const_ptr } )
-                } else {
-                    None
-                }
-            }
-
-            /// Returns `true` if the constant raw pointer is null, `false` otherwise.
-            pub fn is_null(&self) -> bool {
-                if !self.const_ptr.is_null() {
-                    true
-                } else {
-                    false
-                }
-            }
-
-            /// Prints the memory address of the constant raw pointer if `fmt` is true.
-            /// Otherwise, prints the value pointed to by the constant raw pointer if it's not null.
-            /// Returns a cloned instance of `ConstRawPtr<T>`.
-            pub fn print_const_ptr(&self, fmt: bool) -> Self {
-                if !self.const_ptr.is_null() {
-                    if fmt {
-                        println!("{:?}", *self.const_ptr);
-                    } else {
-                        unsafe { println!("{:?}", **self.const_ptr); }
-                    }
-                }
-
-                Self { const_ptr: Box::new(*self.const_ptr.clone()) }
+        
+        /// Constructs a new `ConstRawPtr<T>` instance with a null constant raw pointer.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let null_ptr = ConstRawPtr::const_null_ptr();
+        /// ```
+        pub fn const_null_ptr() -> Self {
+            Self { const_ptr: Box::new(std::ptr::null()) }
+        }
+        
+        /// Returns the raw pointer if it is not null, wrapped in an `Option`. Returns `None` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        ///
+        /// assert_eq!(const_ptr.unbox_const(), Some(&ptr_value as *const i32));
+        /// ```
+        pub fn unbox_const(&self) -> Option<*const T> {
+            if !self.const_ptr.is_null() {
+                Some(*self.const_ptr)
+            } else {
+                None
             }
         }
 
-        // Clone implementation for ConstRawPtr<T>
-        impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> Clone for ConstRawPtr<T> {
-            fn clone(&self) -> Self {
-                Self {
-                    const_ptr: self.const_ptr.clone(),
+        /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        ///
+        /// assert_eq!(const_ptr.unwrap_const(), Some(ptr_value));
+        /// ```
+        pub fn unwrap_const(self) -> Option<T> {
+            if !self.const_ptr.is_null() {
+                Some( unsafe { **self.const_ptr } )
+            } else {
+                None
+            }
+        }
+
+        /// Returns a reference to the value pointed to by the constant raw pointer, wrapped in an `Option`.
+        /// Returns `None` if the pointer is null.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        ///
+        /// assert_eq!(const_ptr.ref_const(), Some(&ptr_value));
+        /// ```
+        pub fn ref_const(&self) -> Option<&T> {
+            if !self.const_ptr.is_null() {
+                Some( unsafe { & **self.const_ptr } )
+            } else {
+                None
+            }
+        }
+
+        /// Returns `true` if the constant raw pointer is null, `false` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let null_ptr = ConstRawPtr::<i32>::const_null_ptr();
+        /// assert!(null_ptr.is_null());
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        /// assert!(!const_ptr.is_null());
+        /// ```
+        pub fn is_null(&self) -> bool {
+            if !self.const_ptr.is_null() {
+                true
+            } else {
+                false
+            }
+        }
+
+        /// Prints the memory address of the constant raw pointer if `fmt` is true.
+        /// Otherwise, prints the value pointed to by the constant raw pointer if it's not null.
+        /// Returns a cloned instance of `ConstRawPtr<T>`.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let ptr_value: i32 = 42;
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+        /// const_ptr.print_const_ptr(true); // prints the memory address
+        /// const_ptr.print_const_ptr(false); // prints the value pointed to by the pointer
+        /// ```
+        pub fn print_const_ptr(&self, fmt: bool) -> Self {
+            if !self.const_ptr.is_null() {
+                if fmt {
+                    println!("{:?}", *self.const_ptr);
+                } else {
+                    unsafe { println!("{:?}", **self.const_ptr); }
                 }
+            }
+
+            Self { const_ptr: Box::new(*self.const_ptr.clone()) }
+        }
+    }
+
+    // Clone implementation for ConstRawPtr<T>
+    /// Implements the `Clone` trait for `ConstRawPtr<T>`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+    ///
+    /// let ptr_value: i32 = 42;
+    /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
+    /// let cloned_ptr = const_ptr.clone();
+    /// ```
+    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> Clone for ConstRawPtr<T> {
+        fn clone(&self) -> Self {
+            Self {
+                const_ptr: self.const_ptr.clone(),
+            }
+        }
+    }
+}
+
+pub mod mut_raw_ptr {
+    /// A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
+    pub struct MutRawPtr<T>
+    where T: std::fmt::Debug, T: std::marker::Send, T: std::marker::Sync, T: core::marker::Copy
+    {
+        mut_ptr: Box<*mut T>,
+    }
+
+    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> MutRawPtr<T> {
+        /// Constructs a new `MutRawPtr<T>` instance with the given mutable raw pointer.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        /// ```
+        pub fn new_mut_ptr(ptr: *mut T) -> Self {
+            Self { mut_ptr: Box::new(ptr) }
+        }
+    
+        /// Constructs a new `MutRawPtr<T>` instance with a null mutable raw pointer.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let null_ptr = MutRawPtr::mut_null_ptr();
+        /// ```
+        pub fn mut_null_ptr() -> Self {
+            Self { mut_ptr: (Box::new(std::ptr::null_mut())) }
+        }
+    
+        /// Returns the raw pointer if it is not null, wrapped in an `Option`. Returns `None` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        ///
+        /// assert_eq!(mut_ptr.unbox_mut(), Some(&mut value as *mut i32));
+        /// ```
+        pub fn unbox_mut(self) -> Option<*mut T> {
+            if !self.mut_ptr.is_null() {
+                Some(*self.mut_ptr)
+            } else {
+                None
+            }
+        }
+
+        /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        ///
+        /// assert_eq!(mut_ptr.unwrap_mut(), Some(value));
+        /// ```
+        pub fn unwrap_mut(self) -> Option<T> {
+            if !self.mut_ptr.is_null() {
+                Some( unsafe { **self.mut_ptr } )
+            } else {
+                None
+            }
+        }
+
+        /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        ///
+        /// assert_eq!(mut_ptr.unwrap_mut(), Some(value));
+        /// ```
+        pub fn ref_mut(&self) -> Option<&T> {
+            if !self.mut_ptr.is_null() {
+                Some( unsafe { & **self.mut_ptr } )
+            } else {
+                None
+            }
+        }
+
+        /// Returns a mutable reference to the value pointed to by the mutable raw pointer, wrapped in an `Option`.
+        /// Returns `None` if the pointer is null.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        ///
+        /// assert_eq!(mut_ptr.mutref_mut(), Some(&mut value));
+        /// ```
+        pub fn mutref_mut(&self) -> Option<&mut T> {
+            if !self.mut_ptr.is_null() {
+                Some( unsafe { &mut **self.mut_ptr } )
+            } else {
+                None
+            }
+        }
+
+        /// Returns `true` if the mutable raw pointer is null, `false` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let null_ptr = MutRawPtr::<i32>::mut_null_ptr();
+        /// assert!(null_ptr.is_null());
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        /// assert!(!mut_ptr.is_null());
+        /// ```
+        pub fn is_null(&self) -> bool {
+            if !self.mut_ptr.is_null() {
+                true
+            } else {
+                false
+            }
+        }
+
+        /// Prints the memory address of the mutable raw pointer if `fmt` is true.
+        /// Otherwise, prints the value pointed to by the mutable raw pointer if it's not null.
+        /// Returns a cloned instance of `MutRawPtr<T>`.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        /// mut_ptr.print_mut_ptr(true); // prints the memory address
+        /// mut_ptr.print_mut_ptr(false); // prints the value pointed to by the pointer
+        /// ```
+        pub fn print_mut_ptr(&self, fmt: bool) -> Self {
+            if !self.mut_ptr.is_null() {
+                if fmt {
+                    println!("{:?}", *self.mut_ptr);
+                } else {
+                    unsafe { println!("{:?}", **self.mut_ptr); }
+                }
+            }
+
+            Self { mut_ptr: Box::new(*self.mut_ptr.clone()) }
+        }
+
+        /// Writes the value `src` to the memory location pointed to by the mutable raw pointer.
+        /// Returns a new instance of `MutRawPtr<*mut T>` with the same raw pointer after the write operation.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let mut value: i32 = 42;
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+        /// mut_ptr.write_mut_ptr(24); // writes 24 to the memory location
+        /// ```
+        pub fn write_mut_ptr(&mut self, src: T) -> Option<Self> {
+            if !self.mut_ptr.is_null() {
+                unsafe {
+                    std::ptr::write(*self.mut_ptr, src);
+                    Some( Self { mut_ptr: Box::new(*self.mut_ptr) } )
+                }
+            } else {
+                None
             }
         }
     }
 
-    pub mod mut_raw_ptr {
-        /// A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
-        pub struct MutRawPtr<T>
-        where T: std::fmt::Debug, T: std::marker::Send, T: std::marker::Sync, T: core::marker::Copy
-        {
-            mut_ptr: Box<*mut T>,
-        }
-
-        impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> MutRawPtr<T> {
-            /// Constructs a new `MutRawPtr<T>` instance with the given mutable raw pointer.
-            pub fn new_mut_ptr(ptr: *mut T) -> Self {
-                Self { mut_ptr: Box::new(ptr) }
-            }
-        
-            /// Constructs a new `MutRawPtr<T>` instance with a null mutable raw pointer.
-            pub fn mut_null_ptr() -> Self {
-                Self { mut_ptr: (Box::new(std::ptr::null_mut())) }
-            }
-        
-            /// Returns the raw pointer if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-            pub fn unbox_mut(self) -> Option<*mut T> {
-                if !self.mut_ptr.is_null() {
-                    Some(*self.mut_ptr)
-                } else {
-                    None
-                }
-            }
-
-            /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-            pub fn unwrap_mut(self) -> Option<T> {
-                if !self.mut_ptr.is_null() {
-                    Some( unsafe { **self.mut_ptr } )
-                } else {
-                    None
-                }
-            }
-
-            /// Returns a reference to the value pointed to by the mutable raw pointer, wrapped in an `Option`.
-            /// Returns `None` if the pointer is null.
-            pub fn ref_mut(&self) -> Option<&T> {
-                if !self.mut_ptr.is_null() {
-                    Some( unsafe { & **self.mut_ptr } )
-                } else {
-                    None
-                }
-            }
-
-            /// Returns a mutable reference to the value pointed to by the mutable raw pointer, wrapped in an `Option`.
-            /// Returns `None` if the pointer is null.
-            pub fn mutref_mut(&self) -> Option<&mut T> {
-                if !self.mut_ptr.is_null() {
-                    Some( unsafe { &mut **self.mut_ptr } )
-                } else {
-                    None
-                }
-            }
-
-            /// Returns `true` if the mutable raw pointer is null, `false` otherwise.
-            pub fn is_null(&self) -> bool {
-                if !self.mut_ptr.is_null() {
-                    true
-                } else {
-                    false
-                }
-            }
-
-            /// Prints the memory address of the mutable raw pointer if `fmt` is true.
-            /// Otherwise, prints the value pointed to by the mutable raw pointer if it's not null.
-            /// Returns a cloned instance of `MutRawPtr<T>`.
-            pub fn print_mut_ptr(&self, fmt: bool) -> Self {
-                if !self.mut_ptr.is_null() {
-                    if fmt {
-                        println!("{:?}", *self.mut_ptr);
-                    } else {
-                        unsafe { println!("{:?}", **self.mut_ptr); }
-                    }
-                }
-
-                Self { mut_ptr: Box::new(*self.mut_ptr.clone()) }
-            }
-
-            /// Writes the value `src` to the memory location pointed to by the mutable raw pointer.
-            /// Returns a new instance of `MutRawPtr<T>` with the same raw pointer after the write operation.
-            pub fn write_mut_ptr(&mut self, src: T) -> Option<Self> {
-                if !self.mut_ptr.is_null() {
-                    unsafe {
-                        std::ptr::write(*self.mut_ptr, src);
-                        Some( Self { mut_ptr: Box::new(*self.mut_ptr) } )
-                    }
-                } else {
-                    None
-                }
-            }
-        }
-
-        // Clone implementation for MutRawPtr<T>
-        impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> Clone for MutRawPtr<T> {
-            fn clone(&self) -> Self {
-                Self {
-                    mut_ptr: self.mut_ptr.clone(),
-                }
+    /// Clone implementation for MutRawPtr<T>
+    /// Implements the `Clone` trait for `MutRawPtr<T>`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+    ///
+    /// let mut value: i32 = 42;
+    /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
+    /// let cloned_ptr = mut_ptr.clone();
+    /// ```
+    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + core::marker::Copy> Clone for MutRawPtr<T> {
+        fn clone(&self) -> Self {
+            Self {
+                mut_ptr: self.mut_ptr.clone(),
             }
         }
     }
