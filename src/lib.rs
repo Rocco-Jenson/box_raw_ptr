@@ -32,7 +32,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.1.6"
+//! box_raw_ptr = "0.1.8"
 //! ```
 //!
 //! ## License
