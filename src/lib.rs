@@ -15,8 +15,7 @@
 //! use box_raw_ptr::const_raw_ptr::ConstRawPtr;
 //!
 //! fn main() {
-//!     let ptr = Box::new(42);
-//!     let raw_ptr = ConstRawPtr::new_const_ptr(&*ptr);
+//!     let raw_ptr = ConstRawPtr::new_const_ptr(1 as *const i32);
 //!
 //!     // Print the memory address of the raw pointer
 //!     raw_ptr.print_const_ptr(true);
@@ -32,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.1.8"
+//! box_raw_ptr = "0.2.0"
 //! ```
 //!
 //! ## License
@@ -45,24 +44,6 @@
 //! on the [GitHub repository](https://github.com/Rocco-Jenson/box_raw_ptr).
 //!
 //! ```
-//!
-//! extern crate box_raw_ptr;
-//!
-//! use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-//!
-//! fn main() {
-//!     let ptr = Box::new(42);
-//!     let raw_ptr = ConstRawPtr::new_const_ptr(&*ptr);
-//!
-//!     // Print the memory address of the raw pointer
-//!     raw_ptr.print_const_ptr(true);
-//!
-//!     // Print the value pointed to by the raw pointer
-//!     raw_ptr.print_const_ptr(false);
-//! }
-//! ```
-
-
 
 pub mod const_raw_ptr {
     /// A wrapper for `*const T` providing methods for safely working with constant raw pointers.
