@@ -35,13 +35,15 @@ fn main() {
     }
 
     // Create New Mut Pointer
-    let mut mut_ptr: MutRawPtr<u8> = MutRawPtr::new_mut_ptr(&mut 13_u8 as *mut u8);
+    let mut_ptr: MutRawPtr<u8> = MutRawPtr::new_mut_ptr(&mut 13_u8 as *mut u8);
 
-    // Match Option<Self> After Writing to ptr
-    match mut_ptr.write_mut_ptr(20 as u8) {
-        Some(v) => {
-            // Print the memory address of the raw pointer
-            v.print_mut_ptr(true);
+    // Cast MutRawPtr<T> To Option<*mut U>
+    let u_ptr: *mut i32 = mut_ptr.mut_cast_ptr::<i32>().unwrap();
+
+    match MutRawPtr::new_mut_ptr(u_ptr).write_mut_ptr(20 as i32) {
+        Some(ptr) => {
+            // Print Derefenced MutRawPtr
+            ptr.print_mut_ptr(true);
         }
         None => (),
     }
