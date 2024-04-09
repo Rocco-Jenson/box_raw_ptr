@@ -31,7 +31,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.2.0"
+//! box_raw_ptr = "0.2.2"
 //! ```
 //!
 //! ## License
