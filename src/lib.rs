@@ -228,6 +228,47 @@ pub mod const_raw_ptr {
                 None
             }
         }
+
+        /// Returns a new instance of `ConstRawPtr<T>` pointing to the memory location
+        /// obtained by adding the index `idx` to the original pointer, if it is not null.
+        ///
+        /// # Safety
+        ///
+        /// - This function is inherently unsafe due to performing pointer arithmetic and constructing a new `ConstRawPtr`.
+        /// - It's the caller's responsibility to ensure that the resulting pointer remains within the bounds of valid memory.
+        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        ///
+        /// # Arguments
+        ///
+        /// * `idx` - The index to be added to the original pointer.
+        ///
+        /// # Returns
+        ///
+        /// An `Option` containing the new `ConstRawPtr` instance pointing to the memory location obtained by adding the index.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let array: [i32; 3] = [1, 2, 3];
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&array[0] as *const i32);
+        ///
+        /// // Get a pointer to the second element of the array
+        /// let second_elem_ptr = const_ptr.get_idx_ptr(1);
+        ///
+        /// assert_eq!(second_elem_ptr.unwrap().unwrap_const(), &array[1]);
+        /// ```
+
+        pub fn set_idx_ptr(&self, idx: usize) -> Option<Self> {
+            if !self.const_ptr.is_null() {
+                Some( unsafe {
+                    Self { const_ptr: Box::new(self.const_ptr.add(idx)) }
+                })
+            } else {
+                None
+            }
+        }
     }
 
     // Clone implementation for ConstRawPtr<T>
@@ -452,6 +493,47 @@ pub mod mut_raw_ptr {
         pub fn mut_cast_ptr<U>(&self) -> Option<*mut U> {
             if !self.mut_ptr.is_null() {
                 Some( *self.mut_ptr as *mut U )
+            } else {
+                None
+            }
+        }
+
+        /// Returns a new instance of `MutRawPtr<T>` pointing to the memory location
+        /// obtained by adding the index `idx` to the original pointer, if it is not null.
+        ///
+        /// # Safety
+        ///
+        /// - This function is inherently unsafe due to performing pointer arithmetic and constructing a new `ConstRawPtr`.
+        /// - It's the caller's responsibility to ensure that the resulting pointer remains within the bounds of valid memory.
+        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        ///
+        /// # Arguments
+        ///
+        /// * `idx` - The index to be added to the original pointer.
+        ///
+        /// # Returns
+        ///
+        /// An `Option` containing the new `MutRawPtr` instance pointing to the memory location obtained by adding the index.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// let array: [i32; 3] = [1, 2, 3];
+        /// let mut_ptr = MutRawPtr::new_const_ptr(&array[0] as *const i32);
+        ///
+        /// // Get a pointer to the second element of the array
+        /// let second_elem_ptr = mut_ptr.get_idx_ptr(1);
+        ///
+        /// assert_eq!(second_elem_ptr.unwrap().unwrap_const(), &array[1]);
+        /// ```
+
+        pub fn set_idx_ptr(&self, idx: usize) -> Option<Self> {
+            if !self.mut_ptr.is_null() {
+                Some( unsafe {
+                    Self { mut_ptr: Box::new(self.mut_ptr.add(idx)) }
+                })
             } else {
                 None
             }
