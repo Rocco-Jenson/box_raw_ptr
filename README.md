@@ -47,4 +47,16 @@ fn main() {
         }
         None => (),
     }
+
+    // Pointer Arithmetic For An [T; usize] That Returns The Index Value In The Array 
+    let arr: [i32; 5] = [1,2,3,4,5];
+
+    let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(arr.as_ptr());
+
+    ConstRawPtr::set_idx_ptr(&arr_ptr, 2)
+        .inspect(|x| {
+            let t: i32 = x.clone().unwrap_const().unwrap();
+            // 2 Indexed From arr Equals 3
+            assert_eq!(3, t);
+        });
 }
