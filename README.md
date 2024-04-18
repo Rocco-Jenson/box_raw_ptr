@@ -17,24 +17,24 @@ box_raw_ptr is a Rust library that offers safe wrappers for working with raw poi
 use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
 fn main() {
-    // Create New Const Pointer
-    let raw_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(&1 as *const i32);
-
-    // Print the value pointed to by the raw pointer
-    raw_ptr.print_const_ptr(false);
-
-    // Unwrap and Deref Box<*const T> To Option<T>
-    raw_ptr.unwrap_const();
-
-    // Create const NULL pointer
-    let null_ptr: ConstRawPtr<&str> = ConstRawPtr::const_null_ptr();
-
-    // Unwrap Box<*const T> To *const T to check if NULL
-    if null_ptr.is_null() {
-        println!("NULL");
+    // External C++ Pointer Function Example:
+    extern "C" {
+        fn cpp_ptr() -> *mut i32;
     }
 
-    // Create New Mut Pointer
+    // Get Unsafe External C++ Pointer
+    let cpp_ptr: *mut i32 = unsafe { cpp_ptr() };
+    
+    // Convert Unsafe External C++ Pointer To MutRawPtr Of Type i32
+    let mut mut_safe_ptr: MutRawPtr<i32> = MutRawPtr::new_mut_ptr(cpp_ptr);
+
+    // Write To The Safe Pointer
+    mut_safe_ptr.write_mut_ptr(20 as i32);
+
+    // Print Value Of mut_safe_ptr Note: Uses .unwrap() as ptr is guaranteed not to be NULL
+    println!("{}", t.unwrap_mut().unwrap());
+
+    // Writing To MutRawPtr<T> Example:
     let mut_ptr: MutRawPtr<u8> = MutRawPtr::new_mut_ptr(&mut 13_u8 as *mut u8);
 
     // Cast MutRawPtr<T> To Option<*mut U>
@@ -42,17 +42,19 @@ fn main() {
 
     match MutRawPtr::new_mut_ptr(u_ptr).write_mut_ptr(20 as i32) {
         Some(ptr) => {
-            // Print Derefenced MutRawPtr
-            ptr.print_mut_ptr(true);
+            // Print MutRawPtr Memory Address
+            println!("{}", ptr.mut_mem_addr());
         }
         None => (),
     }
 
-    // Pointer Arithmetic For An [T; usize] That Returns The Index Value In The Array 
+    // Pointer Arithmetic For A [T; U] That Returns The Index Value In The Array Example:
     let arr: [i32; 5] = [1,2,3,4,5];
 
+    // Create New ConstRawPtr<i32> From The Array As A Pointer
     let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(arr.as_ptr());
 
+    // Set The Index Of The Pointer
     ConstRawPtr::set_idx_ptr(&arr_ptr, 2)
         .inspect(|x| {
             let t: i32 = x.clone().unwrap_const().unwrap();
