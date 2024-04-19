@@ -166,6 +166,7 @@ pub mod const_raw_ptr {
         /// let mut const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
         /// const_ptr.const_set_null();
         /// ```
+        #[inline]
         pub fn const_set_null(&mut self) -> () {
             *self.0 = std::ptr::null();
         }
@@ -181,6 +182,7 @@ pub mod const_raw_ptr {
         /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
         /// let mem_addr = const_ptr.const_mem_addr();
         /// ```
+        #[inline]
         pub fn const_mem_addr(&self) -> String {
             format!("{:x}", *self.0 as usize)
         }
@@ -196,6 +198,7 @@ pub mod const_raw_ptr {
         /// let const_ptr = ConstRawPtr::new_const_ptr(&mut value as *const i32);
         /// let mut_ref = unsafe { &mut *const_ptr.as_mut() };
         /// ```
+        #[inline]
         pub fn as_mut(&self) -> super::mut_raw_ptr::MutRawPtr<T> {
             super::mut_raw_ptr::MutRawPtr::new_mut_ptr(*self.0 as *mut T)
         }
@@ -212,6 +215,7 @@ pub mod const_raw_ptr {
         ///
         /// assert_eq!(const_ptr.unbox_const(), &ptr_value as *const i32);
         /// ```      
+        #[inline]
         pub fn unbox_const(&self) -> *const T {
             *self.0
         }
@@ -271,6 +275,7 @@ pub mod const_raw_ptr {
         /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
         /// assert!(!const_ptr.is_null());
         /// ```      
+        #[inline]
         pub fn is_null(&self) -> bool {
             self.0.is_null()
         }
@@ -487,6 +492,7 @@ pub mod mut_raw_ptr {
         /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
         /// ptr.mut_set_null();
         /// ```
+        #[inline]
         pub fn mut_set_null(&mut self) -> () {
             *self.0 = std::ptr::null_mut();
         }
@@ -502,6 +508,7 @@ pub mod mut_raw_ptr {
         /// let const_ptr = MutRawPtr::new_const_ptr(&ptr_value as *const i32);
         /// let mem_addr = const_ptr.const_mem_addr();
         /// ```
+        #[inline]
         pub fn mut_mem_addr(&self) -> String {
             format!("{:x}", *self.0 as usize)
         }
@@ -517,6 +524,7 @@ pub mod mut_raw_ptr {
         /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
         /// let const_ptr = ptr.as_const();
         /// ```
+        #[inline]
         pub fn as_const(&self) -> super::const_raw_ptr::ConstRawPtr<T> {
             super::const_raw_ptr::ConstRawPtr::new_const_ptr(*self.0 as *const T)
         }
@@ -533,6 +541,7 @@ pub mod mut_raw_ptr {
         ///
         /// assert_eq!(mut_ptr.unbox_mut(), &mut value as *mut i32);
         /// ```
+        #[inline]
         pub fn unbox_mut(self) -> *mut T {
             *self.0
         }
@@ -612,6 +621,7 @@ pub mod mut_raw_ptr {
         /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
         /// assert!(!mut_ptr.is_null());
         /// ``` 
+        #[inline]
         pub fn is_null(&self) -> bool {
             self.0.is_null()
         }
@@ -773,7 +783,5 @@ mod box_raw_ptr_tests {
     use super::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
     #[test]
-    fn test_ptr() -> () {
-        
-    }
+    fn test() -> () {}
 }

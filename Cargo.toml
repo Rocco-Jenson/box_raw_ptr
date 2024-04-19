@@ -2,7 +2,7 @@
 name = "box_raw_ptr"
 version = "0.3.1"
 authors = ["Rocco Jenson <roccojenson35@gmail.com>"]
-description = "A Rust library providing safe wrappers for working with raw pointers, specifically `*const T` and `*mut T`. These wrappers ensure memory safety by encapsulating the raw pointers in safe abstractions and providing safe methods for working with them."
+description = "A Rust library providing safe wrappers for working with raw pointer. These raw pointers are `*const T` and `*mut T`. These wrappers ensure memory safety by encapsulating the raw pointers in safe abstractions and providing safe methods for working with them."
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/box_raw_ptr"
 homepage = "https://github.com/Rocco-Jenson/box_raw_ptr/"
