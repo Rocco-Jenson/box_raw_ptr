@@ -68,7 +68,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.3.0"
+//! box_raw_ptr = "0.3.1"
 //! ```
 //!
 //! ## License
@@ -135,7 +135,7 @@ pub mod const_raw_ptr {
         /// unsafe { const_ptr.const_manual_drop() };
         /// ```
         pub unsafe fn const_manual_drop(self) -> () {
-            let _ = Box::from_raw(*self.0 as *mut T);
+            drop(self);
         }
 
         /// Releases the constant raw pointer and returns it.
@@ -456,7 +456,7 @@ pub mod mut_raw_ptr {
         /// unsafe { ptr.mut_manual_drop() };
         /// ```
         pub unsafe fn mut_manual_drop(self) -> () {
-            let _ = Box::from_raw(*self.0);
+            drop(self);
         }
 
         /// Releases the mutable raw pointer and returns a pointer to the underlying value.
@@ -773,5 +773,7 @@ mod box_raw_ptr_tests {
     use super::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
     #[test]
-    fn test_ptr() -> () {}
+    fn test_ptr() -> () {
+        
+    }
 }

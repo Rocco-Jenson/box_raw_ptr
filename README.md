@@ -1,6 +1,6 @@
 # box_raw_ptr
 
-`box_raw_ptr` is a Rust library providing safe wrappers for working with raw pointers, specifically `*const T` and `*mut T`. These wrappers ensure memory safety by encapsulating the raw pointers in safe abstractions and providing safe methods for working with them.
+`box_raw_ptr` is a Rust library providing safe wrappers for working with raw pointers. These raw pointers are `*const T` and `*mut T`. These wrappers ensure memory safety by encapsulating the raw pointers in safe abstractions and providing safe methods for working with them.
 
 ## Description
 
