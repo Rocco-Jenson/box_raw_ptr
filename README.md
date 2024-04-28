@@ -19,28 +19,34 @@ use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 fn main() {
     // External C++ Pointer Function Example:
     extern "C" {
-        fn cpp_ptr() -> *mut i32;
+        fn cpp_function() -> *const i32;
     }
 
     // Get Unsafe External C++ Pointer
-    let cpp_ptr: *mut i32 = unsafe { cpp_ptr() };
+    let cpp_ptr: *const i32 = unsafe { cpp_function() };
     
     // Convert Unsafe External C++ Pointer To MutRawPtr Of Type i32
-    let mut mut_safe_ptr: MutRawPtr<i32> = MutRawPtr::new_mut_ptr(cpp_ptr);
+    let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(cpp_ptr);
 
-    // Write To The Safe Pointer
-    mut_safe_ptr.write_mut_ptr(20 as i32);
-
-    // Print Value Of mut_safe_ptr Note: Uses .unwrap() as ptr is guaranteed not to be NULL
-    println!("{}", t.unwrap_mut().unwrap());
+    // Print Value Of safe_ptr if safe_ptr is not NULL
+    // Note: .unwrap_const() returns Option<T>
+    // if safe_ptr is not null returns Some(T)
+    safe_ptr.unwrap_const().inspect(|ptr| {
+        println!("{}", *ptr)
+    });
 
     // Writing To MutRawPtr<T> Example:
     let mut_ptr: MutRawPtr<u8> = MutRawPtr::new_mut_ptr(&mut 13_u8 as *mut u8);
 
-    // Cast MutRawPtr<T> To Option<*mut U>
-    let u_ptr: *mut i32 = mut_ptr.mut_cast_ptr::<i32>().unwrap();
+    // Cast MutRawPtr<T> To type U
+    // Note: returns Option<*mut U>,
+    // returns Some(*mut U) if not NULL
+    let cast_ptr: *mut i32 = mut_ptr.mut_cast_ptr::<i32>().unwrap();
 
-    match MutRawPtr::new_mut_ptr(u_ptr).write_mut_ptr(20 as i32) {
+    // Writes to the mutable raw pointer
+    // Note: returns Option<Self>,
+    // returns Some(Self) if not NULL
+    match MutRawPtr::new_mut_ptr(cast_ptr).write_mut_ptr(20 as i32) {
         Some(ptr) => {
             // Print MutRawPtr Memory Address
             println!("{}", ptr.mut_mem_addr());
@@ -48,17 +54,20 @@ fn main() {
         None => (),
     }
 
-    // Pointer Arithmetic For A [T; U] That Returns The Index Value In The Array Example:
+    // Pointer Arithmetic For A [T; T] That Returns The Index Value In The Array Example:
     let arr: [i32; 5] = [1,2,3,4,5];
 
     // Create New ConstRawPtr<i32> From The Array As A Pointer
     let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(arr.as_ptr());
 
     // Set The Index Of The Pointer
-    ConstRawPtr::set_idx_ptr(&arr_ptr, 2)
-        .inspect(|x| {
-            let t: i32 = x.clone().unwrap_const().unwrap();
-            // 2 Indexed From arr Equals 3
-            assert_eq!(3, t);
-        });
+    // Note: .set_idx_ptr() 
+    // returns None if idx is out of array bounds
+    match arr_ptr.set_idx_ptr(2, &arr) {
+        Some(safe_ptr) => {
+            // offset of 2 from arr equals safe_ptr pointing to 3
+            assert_eq!(3, safe_ptr.unwrap_const().unwrap())
+        }
+        None => ()
+    }
 }
