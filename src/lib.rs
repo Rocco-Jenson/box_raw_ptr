@@ -280,6 +280,28 @@ pub mod const_raw_ptr {
             self.0.is_null()
         }
 
+        /// Returns the size of the type `T` in bytes.
+        ///
+        /// This method retrieves the size of the type `T` in bytes using the `std::mem::size_of` function.
+        /// It can be useful for low-level operations involving memory allocation and manipulation.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// // Create a MutRawPtr pointing to an integer
+        /// let const_ptr = ConstRawPtr::<i32>::const_null_ptr();
+        ///
+        /// // Get the size of the type
+        /// let size = const_ptr.const_size_of();
+        /// assert_eq!(size, 4); // Size of i32 on most platforms
+        /// ```
+        #[inline]
+        pub fn const_size_of() -> usize {
+            std::mem::size_of::<T>()
+        }
+
         /// Casts the constant raw pointer to a pointer of a different type `U`.
         /// 
         /// # Safety
@@ -310,17 +332,13 @@ pub mod const_raw_ptr {
         }
 
         /// Returns a new instance of `ConstRawPtr<T>` pointing to the memory location
-        /// obtained by adding the index `idx` to the original pointer, if it is not null.
-        ///
-        /// # Safety
-        ///
-        /// - This function is inherently unsafe due to performing pointer arithmetic and constructing a new `ConstRawPtr`.
-        /// - It's the caller's responsibility to ensure that the resulting pointer remains within the bounds of valid memory.
-        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        /// obtained by adding the index `idx` to the original pointer, if it is not null
+        /// and within the bounds of the provided array `arr`.
         ///
         /// # Arguments
         ///
         /// * `idx` - The index to be added to the original pointer.
+        /// * `arr` - The array slice representing the memory region.
         ///
         /// # Returns
         ///
@@ -335,17 +353,53 @@ pub mod const_raw_ptr {
         /// let const_ptr = ConstRawPtr::new_const_ptr(&array[0] as *const i32);
         ///
         /// // Get a pointer to the second element of the array
-        /// let second_elem_ptr = const_ptr.get_idx_ptr(1);
+        /// let second_elem_ptr = const_ptr.set_idx_ptr(1, &array);
         ///
         /// assert_eq!(second_elem_ptr.unwrap().unwrap_const(), &array[1]);
         /// ```
-        pub fn set_idx_ptr(&self, idx: usize) -> Option<Self> {
+        pub fn set_idx_ptr(&self, idx: isize, arr: &[T]) -> Option<Self> {
             if !self.0.is_null() {
-                Some( unsafe {
-                    Self(Box::new(self.0.add(idx)))
-                })
+                let ptr: *const T = *self.0;
+                let _self: ConstRawPtr<_> = ConstRawPtr::new_const_ptr(unsafe { ptr.offset(idx) });
+                
+                match _self.const_check_bounds(arr) {
+                    true => Some(_self),
+                    false => None,
+                }
             } else {
                 None
+            }
+        }
+
+        /// Checks whether the constant raw pointer is within the bounds of the provided array `arr`.
+        ///
+        /// # Arguments
+        ///
+        /// * `arr` - The array slice representing the memory region.
+        ///
+        /// # Returns
+        ///
+        /// `true` if the constant raw pointer is within the bounds of the array, `false` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
+        ///
+        /// let array: [i32; 3] = [1, 2, 3];
+        /// let const_ptr = ConstRawPtr::new_const_ptr(&array[0] as *const i32);
+        ///
+        /// assert!(const_ptr.const_check_bounds(&array));
+        /// ```
+        pub fn const_check_bounds(&self, arr: &[T]) -> bool {
+            if !self.0.is_null() {
+                let ptr_usize: usize = *self.0 as usize;
+                let arr_start: usize = arr.as_ptr() as usize;
+                let arr_end: usize = arr_start + (arr.len() * std::mem::size_of::<T>());
+
+                arr_start <= ptr_usize && ptr_usize < arr_end
+            } else {
+                false
             }
         }
     }
@@ -626,6 +680,28 @@ pub mod mut_raw_ptr {
             self.0.is_null()
         }
 
+        /// Returns the size of the type `T` in bytes.
+        ///
+        /// This method retrieves the size of the type `T` in bytes using the `std::mem::size_of` function.
+        /// It can be useful for low-level operations involving memory allocation and manipulation.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        ///
+        /// // Create a MutRawPtr pointing to an integer
+        /// let mut_ptr = MutRawPtr::<i32>::mut_null_ptr();
+        ///
+        /// // Get the size of the type
+        /// let size = mut_ptr.mut_size_of();
+        /// assert_eq!(size, 4); // Size of i32 on most platforms
+        /// ```
+        #[inline]
+        pub fn mut_size_of(&self) -> usize {
+            std::mem::size_of::<T>()
+        }
+
         /// Casts the mutable raw pointer to a pointer of a different type `U`.
         /// 
         /// # Safety
@@ -655,43 +731,75 @@ pub mod mut_raw_ptr {
             }
         }
 
-        /// Returns a new instance of `MutRawPtr<T>` pointing to the memory location
-        /// obtained by adding the index `idx` to the original pointer, if it is not null.
-        ///
-        /// # Safety
-        ///
-        /// - This function is inherently unsafe due to performing pointer arithmetic and constructing a new `ConstRawPtr`.
-        /// - It's the caller's responsibility to ensure that the resulting pointer remains within the bounds of valid memory.
-        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        /// Sets the index pointer of the current `MutRawPtr<T>` instance to the memory location obtained by adding the index `idx` to the original pointer.
+        /// Checks if the resulting pointer is within the bounds of the given array `arr`.
         ///
         /// # Arguments
         ///
         /// * `idx` - The index to be added to the original pointer.
+        /// * `arr` - A reference to the array against which the bounds check is performed.
         ///
         /// # Returns
         ///
-        /// An `Option` containing the new `MutRawPtr` instance pointing to the memory location obtained by adding the index.
+        /// An `Option` containing a new `MutRawPtr<T>` instance if the resulting pointer is within the bounds of the array, or `None` otherwise.
         ///
         /// # Example
         ///
         /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+        /// use box_raw_ptr::{mut_raw_ptr::MutRawPtr, const_raw_ptr::ConstRawPtr};
         ///
         /// let array: [i32; 3] = [1, 2, 3];
-        /// let mut_ptr = MutRawPtr::new_const_ptr(&array[0] as *const i32);
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut array[0] as *mut i32);
         ///
         /// // Get a pointer to the second element of the array
-        /// let second_elem_ptr = mut_ptr.get_idx_ptr(1);
+        /// let second_elem_ptr = mut_ptr.set_idx_ptr(1, &array);
         ///
-        /// assert_eq!(second_elem_ptr.unwrap().unwrap_const(), &array[1]);
+        /// assert!(second_elem_ptr.is_some());
         /// ```
-        pub fn set_idx_ptr(&self, idx: usize) -> Option<Self> {
+        pub fn set_idx_ptr(&self, idx: isize, arr: &[T]) -> Option<Self> {
             if !self.0.is_null() {
-                Some( unsafe {
-                    Self(Box::new(self.0.add(idx)))
-                })
+                let ptr: *mut T = *self.0;
+                let _self: MutRawPtr<_> = MutRawPtr::new_mut_ptr(unsafe { ptr.offset(idx) });
+                
+                match _self.mut_check_bounds(arr) {
+                    true => Some(_self),
+                    false => None,
+                }
             } else {
                 None
+            }
+        }
+
+        
+        /// Checks if the current `MutRawPtr<T>` instance points to a memory location within the bounds of the given array `arr`.
+        ///
+        /// # Arguments
+        ///
+        /// * `arr` - A reference to the array against which the bounds check is performed.
+        ///
+        /// # Returns
+        ///
+        /// `true` if the pointer is within the bounds of the array, `false` otherwise.
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use box_raw_ptr::{mut_raw_ptr::MutRawPtr, const_raw_ptr::ConstRawPtr};
+        ///
+        /// let array: [i32; 3] = [1, 2, 3];
+        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut array[0] as *mut i32);
+        ///
+        /// assert!(mut_ptr.mut_check_bounds(&array));
+        /// ```
+        pub fn mut_check_bounds(&self, arr: &[T]) -> bool {
+            if !self.0.is_null() {
+                let ptr_usize: usize = *self.0 as usize;
+                let arr_start: usize = arr.as_ptr() as usize;
+                let arr_end: usize = arr_start + (arr.len() * std::mem::size_of::<T>());
+                
+                arr_start <= ptr_usize && ptr_usize < arr_end
+            } else {
+                false
             }
         }
 
@@ -716,7 +824,7 @@ pub mod mut_raw_ptr {
             } else {
                 None
             }
-        }   
+        }
     }
 
     /// Implements the `Clone` trait for `MutRawPtr<T>`.
@@ -783,5 +891,5 @@ mod box_raw_ptr_tests {
     use super::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
     #[test]
-    fn test() -> () {}
+    fn box_raw_ptr_tests() -> () {}
 }
