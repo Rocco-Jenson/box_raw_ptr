@@ -77,7 +77,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.3.5"
+//! box_raw_ptr = "0.3.6"
 //! ```
 //!
 //! ## License
@@ -369,7 +369,7 @@ pub mod const_raw_ptr {
         pub fn set_idx_ptr(&self, idx: isize, arr: &[T]) -> Option<Self> {
             if !self.0.is_null() {
                 let ptr: *const T = *self.0;
-                let _self: ConstRawPtr<_> = ConstRawPtr::new_const_ptr(unsafe { ptr.offset(idx) });
+                let _self: ConstRawPtr<T> = ConstRawPtr::new_const_ptr( unsafe { ptr.offset(idx)} );
                 
                 match _self.const_check_bounds(arr) {
                     true => Some(_self),
