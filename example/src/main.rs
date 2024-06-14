@@ -6,11 +6,11 @@ extern "C" {
 }
 
 fn main() {
-    let mut mut_ptr: MutRawPtr<i32> = MutRawPtr::new_mut_ptr(unsafe {
+    let mut mut_ptr: MutRawPtr<i32> = MutRawPtr::mut_new_ptr(unsafe {
         get_c_ptr()
     });
 
-    mut_ptr.write_mut_ptr(32);
+    mut_ptr.write_ptr(32);
 
-    println!("{:?} {}", mut_ptr.mut_mem_addr(), mut_ptr.unwrap_mut().unwrap());
+    println!("{:?} {}", mut_ptr.memory_address(), mut_ptr.unwrap_mut().unwrap());
 }

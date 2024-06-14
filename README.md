@@ -17,16 +17,17 @@ box_raw_ptr is a Rust library that offers safe wrappers for working with raw poi
 use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
 fn main() {
-    // External C++ Pointer Function Example:
+    // External C Pointer Function Example:
+    #[link(name = "example")]
     extern "C" {
-        fn cpp_function() -> *const i32;
+        fn get_c_ptr() -> *const libc::c_int;
     }
 
-    // Get Unsafe External C++ Pointer
-    let cpp_ptr: *const i32 = unsafe { cpp_function() };
+    // Get Unsafe External C Pointer
+    let c_ptr: *const i32 = unsafe { get_c_ptr() };
     
-    // Convert Unsafe External C++ Pointer To MutRawPtr Of Type i32
-    let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(cpp_ptr);
+    // Convert Unsafe External C Pointer To MutRawPtr Of Type i32
+    let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(c_ptr);
 
     // Print Value Of safe_ptr if safe_ptr is not NULL
     // Note: .unwrap_const() returns Option<T>
