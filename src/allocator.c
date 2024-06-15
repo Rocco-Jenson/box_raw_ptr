@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/* Check if architecture is x64 or ARM
+/* Check if architecture is x64 or ARM */
 #if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64)
     typedef uint64_t arch_type;
 /* Check if architecture is x86 or ARM x86 */
