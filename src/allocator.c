@@ -1,5 +1,4 @@
 /* Wrapper around malloc() and free() to remove libc dependency */
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -25,10 +24,5 @@ void* c_global_allocator(arch_type bytes) {
 }
 
 arch_type c_global_deallocator(void* ptr) {
-    if (ptr != NULL) {
-        free(ptr);
-        return 0;
-    } else {
-        return 1;
-    }
+    free(ptr);
 }
