@@ -95,6 +95,7 @@
 /* 
 Imports C_Global_Allocator to library 
 See allocator.rs and allocator.c for implementation
+Note: ALL HEAP ALLOCATIONS MANAGED BY MALLOC AND FREE
 */
 mod allocator;
 
