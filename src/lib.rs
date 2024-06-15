@@ -92,8 +92,9 @@
 //!
 //! ```
 
-/* Imports C_Global_Allocator to library 
-   See allocator.rs and allocator.c for implementation
+/* 
+Imports C_Global_Allocator to library 
+See allocator.rs and allocator.c for implementation
 */
 mod allocator;
 
