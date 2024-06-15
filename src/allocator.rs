@@ -27,9 +27,8 @@ unsafe impl GlobalAlloc for C_GLOBAL_ALLOCATOR {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        if !ptr.is_null() {
-            c_global_deallocator(ptr as *mut c_void);
-        }
+        // ptr null check is done in function
+        c_global_deallocator(ptr as *mut c_void);
     }
 }
 
