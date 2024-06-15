@@ -39,14 +39,6 @@ void c_global_deallocator(void* ptr) {
     }
 }
 
-// HEAP_COUNT = 0, arch_type = 1
-const arch_type* global_allocation_info() {
-    static arch_type arr[2];
-    arr[0] = HEAP_COUNT;
-    if (sizeof(arch_type) == sizeof(uint64_t) {
-        arr[1] = 64;
-    } else if (sizeof(arch_type) == sizeof(uint32_t) {
-        arr[1] = 32;
-    }
-    return arr;
+arch_type global_allocation_info() {
+    return HEAP_COUNT;
 }
