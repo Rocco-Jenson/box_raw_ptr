@@ -1,8 +1,16 @@
 //! # box_raw_ptr
+//! 
+//! `box_raw_ptr` is a Rust library designed to provide safe wrappers for handling raw pointers `*const T` and `*mut T`.
+//! The library ensures memory safety by encapsulating these raw pointers within safe abstractions, leveraging Rust's ownership and borrowing rules.
 //!
-//! `box_raw_ptr` is a Rust library providing safe wrappers for working with raw pointers.
-//! These raw pointers are `*const T` and `*mut T`. The `Box<T>` wrapper ensure memory safety by encapsulating
-//! the raw pointers in safe abstractions and providing safe methods for working with them.
+//! All heap allocations in this library utilize `malloc` and `free`, ensuring compatibility with C FFI (Foreign Function Interface).
+//! This approach allows seamless integration with C while maintaining safety through Rust's type system and ownership model.
+//! The raw pointers defined in Rust that are not imported from C will still be compatible.
+//!
+//! The `Box<T>` wrapper around the raw pointers by `box_raw_ptr` ensures that operations on raw pointers are safe and aligned with Rust's memory safety principles.
+//! This makes it easier to work with raw pointers in Rust codebases, especially when interfacing with C libraries or performing low-level memory management tasks.
+//!
+//! By combining the power of Rust's safety features with the flexibility of raw pointers, `box_raw_ptr` facilitates robust and secure memory management in Rust applications.
 //!
 //! ## Features
 //!
@@ -13,52 +21,52 @@
 //!
 //! ```rust
 //! use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
-//!
+//! 
 //! fn main() {
 //!     // External C Pointer Function Example:
 //!     #[link(name = "example")]
 //!     extern "C" {
 //!         fn get_c_ptr() -> *const libc::c_int;
 //!     }
-//!
+//! 
 //!     // Get Unsafe External C Pointer
 //!     let c_ptr: *const i32 = unsafe { get_c_ptr() };
-//!
+//! 
 //!     // Convert Unsafe External C++ Pointer To MutRawPtr Of Type i32
-//!     let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(c_ptr);
-//!
+//!     let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(c_ptr);
+//! 
 //!     // Print Value Of safe_ptr if safe_ptr is not NULL
 //!     // Note: .unwrap_const() returns Option<T>
 //!     // if safe_ptr is not null returns Some(T)
 //!     safe_ptr.unwrap_const().inspect(|ptr| {
 //!         println!("{}", *ptr)
 //!     });
-//!
+//! 
 //!     // Writing To MutRawPtr<T> Example:
-//!     let mut_ptr: MutRawPtr<u8> = MutRawPtr::new_mut_ptr(&mut 13_u8 as *mut u8);
-//!
+//!     let mut_ptr: MutRawPtr<u8> = MutRawPtr::mut_new_ptr(&mut 13_u8 as *mut u8);
+//! 
 //!     // Cast MutRawPtr<T> To type U
 //!     // Note: returns Option<*mut U>,
 //!     // returns Some(*mut U) if not NULL
 //!     let cast_ptr: *mut i32 = mut_ptr.mut_cast_ptr::<i32>().unwrap();
-//!
+//! 
 //!     // Writes to the mutable raw pointer
 //!     // Note: returns Option<Self>,
 //!     // returns Some(Self) if not NULL
-//!     match MutRawPtr::new_mut_ptr(cast_ptr).write_mut_ptr(20 as i32) {
+//!     match MutRawPtr::mut_new_ptr(cast_ptr).write_mut_ptr(20 as i32) {
 //!         Some(ptr) => {
 //!             // Print MutRawPtr Memory Address
-//!             println!("{}", ptr.mut_mem_addr());
+//!             println!("{}", ptr.memory_address());
 //!         }
 //!         None => (),
 //!     }
-//!
+//! 
 //!     // Pointer Arithmetic For A [T; T] That Returns The Index Value In The Array Example:
 //!     let arr: [i32; 5] = [1,2,3,4,5];
-//!
+//! 
 //!     // Create New ConstRawPtr<i32> From The Array As A Pointer
-//!     let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::new_const_ptr(arr.as_ptr());
-//!
+//!     let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(arr.as_ptr());
+//! 
 //!     // Set The Index Of The Pointer
 //!     // Note: .set_idx_ptr() 
 //!     // returns None if idx is out of array bounds
@@ -78,7 +86,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.4.1"
+//! box_raw_ptr = "0.5.0"
 //! ```
 //!
 //! ## License
@@ -95,7 +103,7 @@
 /* 
 Imports C_Global_Allocator to library 
 See allocator.rs and allocator.c for implementation
-Note: ALL HEAP ALLOCATIONS MANAGED BY MALLOC AND FREE
+Note: ALL LIBRARY HEAP ALLOCATIONS MANAGED BY MALLOC AND FREE
 */
 mod allocator;
 
@@ -902,14 +910,11 @@ pub mod mut_raw_ptr {
 
 #[cfg(test)]
 mod box_raw_ptr_tests {
-    use super::mut_raw_ptr::MutRawPtr;
+     use super::mut_raw_ptr::MutRawPtr;
 
     #[test]
     fn c_allocator_test() -> () {
+        /* Tests If Allocator Works */
         let _ = MutRawPtr::mut_new_ptr(&mut 1 as *mut i32);
-        /*
-        Tests If Deallocation of MutRawPtr is successful
-        Panics with (exit code: 0xc0000374, STATUS_HEAP_CORRUPTION) if failed
-        */
     }
 }
