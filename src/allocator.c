@@ -1,8 +1,9 @@
 /* Wrapper around malloc() and free() to remove libc dependency */
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-/* Check if architecture is x64 or ARM x64 */
+/* Check if architecture is x64 or ARM
 #if defined(__x86_64__) 
     || defined(_M_X64) 
     || defined(__aarch64)
@@ -26,8 +27,11 @@ void* c_global_allocator(arch_type bytes) {
     if (ptr != NULL) {
         HEAP_COUNT++;
     }
+    /* return no matter if null required 
+    for handle_alloc_error in rust */
     return ptr;
 }
+
 void c_global_deallocator(void* ptr) {
     if (ptr != NULL) {
         HEAP_COUNT--;
@@ -35,6 +39,14 @@ void c_global_deallocator(void* ptr) {
     }
 }
 
-const char* global_allocation_info() {
-    const char* data[] = {};
+// HEAP_COUNT = 0, arch_type = 1
+arch_type* global_allocation_info() {
+    static arch_type arr[2];
+    arr[0] = HEAP_COUNT;
+    if (sizeof(arch_type) == sizeof(uint64_t) {
+        arr[1] = 64;
+    } else if (sizeof(arch_type) == sizeof(uint32_t) {
+        arr[1] = 32;
+    }
+    return arr;
 }
