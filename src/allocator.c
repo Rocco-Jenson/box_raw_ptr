@@ -22,7 +22,6 @@
 void* c_global_allocator(arch_type bytes) {
     return malloc(bytes);
 }
-
-arch_type c_global_deallocator(void* ptr) {
+void c_global_deallocator(void* ptr) {
     free(ptr);
 }
