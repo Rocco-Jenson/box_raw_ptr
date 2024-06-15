@@ -2,11 +2,16 @@
 use std::alloc::{GlobalAlloc, Layout, handle_alloc_error};
 
 /* C Types */
-type size_t = usize;
+#[cfg(target_pointer_width = "64")]
+type arch_bytes = u64;
+
+#[cfg(target_pointer_width = "32")]
+type arch_bytes = u32;
+
 type c_void = std::ffi::c_void;
 
 extern "C" {
-    fn c_global_allocator(bytes: size_t) -> *mut c_void;
+    fn c_global_allocator(bytes: arch_bytes) -> *mut c_void;
     fn c_global_deallocator(ptr: *mut c_void) -> c_void;
 }
 
