@@ -21,12 +21,18 @@
 
 volatile static uint8_t HEAP_COUNT = 0;
 
-void* c_global_allocator(arch_type bytes) {
-    
-    return malloc(bytes);
+void* c_global_allocator(arch_type bytes) {   
+    void* ptr = malloc(bytes);
+    if (ptr != NULL) {
+        HEAP_COUNT++;
+    }
+    return ptr;
 }
 void c_global_deallocator(void* ptr) {
-    free(ptr);
+    if (ptr != NULL) {
+        HEAP_COUNT--;
+        free(ptr);
+    }
 }
 
 const char* global_allocation_info() {
