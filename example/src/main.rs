@@ -10,7 +10,5 @@ fn main() {
         get_c_ptr()
     });
 
-    mut_ptr.write_ptr(32);
-
     println!("{:?} {}", mut_ptr.memory_address(), mut_ptr.unwrap_mut().unwrap());
 }
