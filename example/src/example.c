@@ -2,10 +2,9 @@
 
 int* get_c_ptr() {
     int* ptr = (int*)malloc(sizeof(int));
-
-    if (ptr == NULL) {
-        return NULL; // Memory Allocation Failed
-    }
-
-    return ptr;
+    // Check if memory allocation Failed
+    int* val = (ptr != NULL) ? ptr : NULL;
+    // Assign value to int* ptr
+    *val = 12;
+    return val;
 }
