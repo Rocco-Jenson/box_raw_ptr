@@ -1,7 +1,7 @@
 use box_raw_ptr::mut_raw_ptr::MutRawPtr;
 
 //Import C Function
-#[link(name = "example")]
+#[link(name = "example", kind = "static")]
 extern "C" {
     fn get_c_ptr() -> *mut i32;
 }
