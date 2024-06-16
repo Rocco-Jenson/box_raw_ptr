@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define X86_X64_SIZE 0xFFFFFFFFFFFFFFFFu
-#define X86_SIZE  0xFFFFFFFF
+#define X86_X64_SIZE 0xFFFFFFFFFFFFFFFFu /* Max 64 bit integer */
+#define X86_SIZE  0xFFFFFFFF /* Max 32 bit integer */
 
 /* Check if architecture is x86_x64 */
 #if UINTPTR_MAX == X86_X64_SIZE
