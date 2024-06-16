@@ -21,5 +21,6 @@ void* c_global_allocator(arch_type bytes) {
 }
 
 void c_global_deallocator(void* ptr) {
+    /* Rust allocator manages NULL check */
     free(ptr);
 }
