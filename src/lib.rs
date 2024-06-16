@@ -489,7 +489,9 @@ pub mod const_raw_ptr {
 
 pub mod mut_raw_ptr {
     /// A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
-    pub struct MutRawPtr<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy>(Box<*mut T>);
+    pub struct MutRawPtr<
+            T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy
+        >(Box<*mut T>);
 
     impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> MutRawPtr<T> {
         /// Constructs a new `MutRawPtr<T>` instance with the given mutable raw pointer.
