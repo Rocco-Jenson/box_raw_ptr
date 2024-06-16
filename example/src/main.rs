@@ -1,6 +1,11 @@
 use box_raw_ptr::mut_raw_ptr::MutRawPtr;
 
-//Import C Function
+/*
+Import C file
+NOTE: Specify type of file
+(ex: kind = "dylib" || "static")
+or linker will throw error
+*/
 #[link(name = "example", kind = "static")]
 extern "C" {
     fn get_c_ptr() -> *mut i32;
