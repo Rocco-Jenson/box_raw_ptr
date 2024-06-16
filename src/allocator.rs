@@ -10,6 +10,7 @@ type arch_type = u32;
 
 type c_void = std::ffi::c_void;
 
+#[link(name = "allocator", kind = "static")]
 extern "C" {
     fn c_global_allocator(bytes: arch_type) -> *mut c_void;
     fn c_global_deallocator(ptr: *mut u8) -> c_void;
