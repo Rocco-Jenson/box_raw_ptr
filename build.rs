@@ -1,5 +1,6 @@
 fn main() {
     cc::Build::new()
         .file("src/allocator.c")
-        .compile("allocator");
+        .shared_flag(true)
+        .compile("allocator")
 }
