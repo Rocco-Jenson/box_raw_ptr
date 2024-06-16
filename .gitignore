@@ -1,2 +1,4 @@
+# Ignore automatically created
+# build artifacts and crate management
 /target
 /Cargo.lock
