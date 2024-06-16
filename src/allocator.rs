@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 use std::alloc::{GlobalAlloc, Layout, handle_alloc_error};
 
-/* C Types to remove libc dependency */
+/* Custom C types to remove libc dependency */
 #[cfg(target_pointer_width = "64")]
 type arch_type = u64;
 
