@@ -16,7 +16,7 @@ extern "C" {
     fn c_global_deallocator(ptr: *mut u8) -> c_void;
 }
 
-pub struct C_GLOBAL_ALLOCATOR;
+struct C_GLOBAL_ALLOCATOR;
 
 unsafe impl GlobalAlloc for C_GLOBAL_ALLOCATOR {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
