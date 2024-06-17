@@ -86,7 +86,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "0.5.2"
+//! box_raw_ptr = "1.0.0"
 //! ```
 //!
 //! ## License
@@ -101,7 +101,7 @@
 //! ```
 
 /* 
-Imports C_Global_Allocator to library 
+Imports C_Global_Allocator to library
 See allocator.rs and allocator.c for implementation
 Note: ALL LIBRARY HEAP ALLOCATIONS MANAGED BY MALLOC AND FREE
 */
