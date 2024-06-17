@@ -2,7 +2,7 @@ use box_raw_ptr::mut_raw_ptr::MutRawPtr;
 
 /*
 Import C file
-NOTE: Specify type of file (ex: kind = "dylib" || "static") or linker will throw error
+NOTE: Correctly specify type of file (ex: kind = "dylib" || "static") or linker will throw error
 */
 #[link(name = "example", kind = "static")]
 extern "C" {
