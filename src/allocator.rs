@@ -17,11 +17,6 @@ extern "C" {
     fn c_global_deallocator(ptr: *mut u8) -> c_void;
 }
 
-/*
-Note: Only lib.rs uses C_GLOBAL_ALLOCATOR to make custom C allocations,
-any other allocations in user project are defined with the
-#[global_allocator] attribute
-*/
 pub(self) struct C_GLOBAL_ALLOCATOR;
 
 unsafe impl GlobalAlloc for C_GLOBAL_ALLOCATOR {
@@ -40,5 +35,10 @@ unsafe impl GlobalAlloc for C_GLOBAL_ALLOCATOR {
     }
 }
 
+/*
+Note pub(self): Only lib.rs uses C_GLOBAL_ALLOCATOR to make custom C allocations,
+any other allocations in user project are defined with the
+#[global_allocator] attribute
+*/
 #[global_allocator]
 pub(self) static GLOBAL: C_GLOBAL_ALLOCATOR = C_GLOBAL_ALLOCATOR;
