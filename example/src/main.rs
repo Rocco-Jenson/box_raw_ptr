@@ -1,8 +1,8 @@
 use box_raw_ptr::mut_raw_ptr::MutRawPtr;
 
-/*
+/* 
 Import C file
-NOTE: Correctly specify type of file (ex: kind = "dylib" || "static") or linker will throw error
+NOTE: Correctly specify type of file (ex: kind = "dylib" || "static") or linker will throw error 
 */
 #[link(name = "example", kind = "static")]
 extern "C" {
@@ -10,16 +10,16 @@ extern "C" {
 }
 
 fn main() {
-    // Get int* from C and convert to MutRawPtr<i32>
+    /* Get int* from C and convert to MutRawPtr<i32> */
     let ptr: MutRawPtr<i32> = MutRawPtr::mut_new_ptr(unsafe {
         get_c_ptr()
     });
 
-    // Print memory address of C pointer and the underlying value
+    /* Print memory address of C pointer and the underlying value */
     println!("{:?} {}", ptr.memory_address(), ptr.unwrap_mut().unwrap());
 
-    /*
-    Memory is automatically dropped using free() from the box_raw_ptr Global Allocator
-    See allocator.rs and allocator.c for implementation
+    /* 
+    Memory is automatically dropped using free() from the box_raw_ptr Global Allocator 
+    See allocator.rs and allocator.c for implementation 
     */
 }
