@@ -1,104 +1,102 @@
 //! # box_raw_ptr
-//! 
-//! `box_raw_ptr` is a Rust library designed to provide safe wrappers for handling raw pointers `*const T` and `*mut T`.
-//! The library ensures memory safety by encapsulating these raw pointers within safe abstractions, leveraging Rust's ownership and borrowing rules.
 //!
-//! All heap allocations in this library utilize `malloc` and `free`, ensuring compatibility with C FFI (Foreign Function Interface).
-//! This approach allows seamless integration with C while maintaining safety through Rust's type system and ownership model.
-//! The raw pointers defined in Rust that are not imported from C will still be compatible.
-//!
-//! The `Box<T>` wrapper around the raw pointers by `box_raw_ptr` ensures that operations on raw pointers are safe and aligned with Rust's memory safety principles.
-//! This makes it easier to work with raw pointers in Rust codebases, especially when interfacing with C libraries or performing low-level memory management tasks.
-//!
-//! By combining the power of Rust's safety features with the flexibility of raw pointers, `box_raw_ptr` facilitates robust and secure memory management in Rust applications.
+//! box_raw_ptr is a Rust library providing safe abstractions for working with raw pointers (`*const T` and `*mut T`). It ensures proper alignment, bounds checking, and safe memory operations, inspired by Rust's safety principles while allowing interoperability with C-style memory management.
 //!
 //! ## Features
 //!
-//! - **ConstRawPtr**: A wrapper for `*const T` providing methods for safely working with constant raw pointers.
-//! - **MutRawPtr**: A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
+//! - **Type Safety**: Wrappers (`ConstRawPtr` and `MutRawPtr`) ensure safe usage of raw pointers (`*const T` and `*mut T`).
 //!
-//! ## Example
+//! - **Bounds Checking**: Methods to check and adjust offsets within allocated memory.
 //!
-//! ```rust
-//! use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
-//! 
-//! fn main() {
-//!     // External C Pointer Function Example:
-//!     #[link(name = "example")]
-//!     extern "C" {
-//!         fn get_c_ptr() -> *const libc::c_int;
-//!     }
-//! 
-//!     // Get Unsafe External C Pointer
-//!     let c_ptr: *const i32 = unsafe { get_c_ptr() };
-//! 
-//!     // Convert Unsafe External C++ Pointer To MutRawPtr Of Type i32
-//!     let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(c_ptr);
-//! 
-//!     // Print Value Of safe_ptr if safe_ptr is not NULL
-//!     // Note: .unwrap_const() returns Option<T>
-//!     // if safe_ptr is not null returns Some(T)
-//!     safe_ptr.unwrap_const().inspect(|ptr| {
-//!         println!("{}", *ptr)
-//!     });
-//! 
-//!     // Writing To MutRawPtr<T> Example:
-//!     let mut_ptr: MutRawPtr<u8> = MutRawPtr::mut_new_ptr(&mut 13_u8 as *mut u8);
-//! 
-//!     // Cast MutRawPtr<T> To type U
-//!     // Note: returns Option<*mut U>,
-//!     // returns Some(*mut U) if not NULL
-//!     let cast_ptr: *mut i32 = mut_ptr.mut_cast_ptr::<i32>().unwrap();
-//! 
-//!     // Writes to the mutable raw pointer
-//!     // Note: returns Option<Self>,
-//!     // returns Some(Self) if not NULL
-//!     match MutRawPtr::mut_new_ptr(cast_ptr).write_mut_ptr(20 as i32) {
-//!         Some(ptr) => {
-//!             // Print MutRawPtr Memory Address
-//!             println!("{}", ptr.memory_address());
-//!         }
-//!         None => (),
-//!     }
-//! 
-//!     // Pointer Arithmetic For A [T; T] That Returns The Index Value In The Array Example:
-//!     let arr: [i32; 5] = [1,2,3,4,5];
-//! 
-//!     // Create New ConstRawPtr<i32> From The Array As A Pointer
-//!     let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(arr.as_ptr());
-//! 
-//!     // Set The Index Of The Pointer
-//!     // Note: .set_idx_ptr() 
-//!     // returns None if idx is out of array bounds
-//!     match arr_ptr.set_idx_ptr(2, &arr) {
-//!         Some(safe_ptr) => {
-//!             // offset of 2 from arr equals safe_ptr pointing to 3
-//!             assert_eq!(3, safe_ptr.unwrap_const().unwrap())
-//!         }
-//!         None => ()
-//!     }
-//! }
-//! ```
+//! - **Alignment Guarantees**: Ensures pointers are aligned according to `T`.
+//!
+//! - **Memory Management**: Includes methods for deallocating memory and safely handling null pointers.
+//!
+//! - **Interoperability**: Facilitates safe interaction with memory allocated by C functions or Rust's allocator.
+//!
+//! ## Components
+//!
+//! - **ConstRawPtr**: Provides safe operations on `*const T` pointers, including bounds checking and memory release.
+//!
+//! - **MutRawPtr**: Offers safe operations on `*mut T` pointers, supporting mutable access and memory management.
 //!
 //! ## Usage
 //!
-//! Add this to your `Cargo.toml`:
+//! ```rust
+//! use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
+//!
+//! fn main() {
+//!     // Example: Import C pointer and write to the allocated data
+//!     #[link(name = "example", kind = "static")]
+//!     extern "C" {
+//!         fn c_ptr() -> *mut std::ffi::c_int;
+//!     }
+//!
+//!     let ptr: *mut i32 = unsafe { c_ptr() };
+//!
+//!     let safeptr = MutRawPtr::new(ptr, 1, 1);
+//!
+//!     safeptr.write_ptr(14).unwrap();
+//!
+//!     assert_eq!(safeptr.unwrap().unwrap(), 14)
+//!
+//!     // Example: Create a ConstRawPtr to safely handle a raw const pointer
+//!     // Allocate properly aligned memory for an i32
+//!     let alloc: *const i32 = unsafe { 
+//!         std::alloc::alloc(std::alloc::Layout::from_size_align(20, 4).unwrap()) as *const i32 
+//!     };
+//!     let mut ptr: ConstRawPtr<i32> = ConstRawPtr::new(alloc, 5, 1);
+//!
+//!     ptr.change_offset(4).unwrap();
+//!
+//!     println!("{} : {}", ptr.unwrap().unwrap(), ptr.memory_address());
+//! }
+//! ```
+//!
+//! ## Safety Considerations
+//!
+//! - **Unsafe Contexts**: Use of raw pointers inherently involves unsafe operations.
+//!
+//! - **Memory Safety**: Ensure proper initialization and alignment of pointers.
+//!
+//! - **Dropping Pointers**: Manually dropping pointers can lead to undefined behavior if used afterward.
+//!
+//! ## Installation
+//!
+//! Add the following to your `Cargo.toml`:
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "1.0.0"
+//! box_raw_ptr = "2.0.0"
 //! ```
+//!
+//! ## Documentation
+//!
+//! For detailed API documentation, refer to [docs.rs](https://docs.rs/box_raw_ptr/latest/box_raw_ptr/).
 //!
 //! ## License
 //!
-//! This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for details.
+//! MIT License
 //!
-//! ## Contributions
+//! Copyright (c) 2024 Rocco Zinedine Samuel Jenson
 //!
-//! Contributions are welcome! Please feel free to submit a pull request or open an issue
-//! on the [GitHub repository](https://github.com/Rocco-Jenson/box_raw_ptr).
+//! Permission is hereby granted, free of charge, to any person obtaining a copy
+//! of this software and associated documentation files (the "Software"), to deal
+//! in the Software without restriction, including without limitation the rights
+//! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//! copies of the Software, and to permit persons to whom the Software is
+//! furnished to do so, subject to the following conditions:
 //!
-//! ```
+//! The above copyright notice and this permission notice shall be included in all
+//! copies or substantial portions of the Software.
+//!
+//! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//! SOFTWARE.
 
 /* 
 Imports C_Global_Allocator to library
@@ -108,815 +106,803 @@ Note: ALL LIBRARY HEAP ALLOCATIONS MANAGED BY MALLOC AND FREE
 mod allocator;
 
 pub mod const_raw_ptr {
-    /// A wrapper for `*const T` providing methods for safely working with constant raw pointers.
-    pub struct ConstRawPtr<
-        T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy
-    >(Box<*const T>);
+    use std::marker::{Copy, Send, Sync};
 
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> ConstRawPtr<T> {
-        /// Constructs a new `ConstRawPtr<T>` instance with the given constant raw pointer.
-        ///
-        /// # Example
-        ///
+    /// A wrapper for `*const T` providing methods for safely working with constant raw pointers.
+    /// 
+    /// `ConstRawPtr` ensures that the raw pointer is properly aligned and provides utility methods
+    /// for checking bounds, changing offsets, and other common pointer operations. 
+    ///
+    /// Fields:
+    /// - `ptr: *const T`: A raw constant pointer to the data.
+    /// - `memory_length: usize`: The length of the memory block that `ptr` points to.
+    /// - `offset: usize`: The current position within the memory block.
+    ///
+    /// Notes:
+    /// - `memory_length` is not zero-based indexed.
+    /// - `offset` is not zero-based indexed.
+    ///
+    /// # Safety
+    ///
+    /// Working with raw pointers is inherently unsafe. Ensure that the memory pointed to by `ptr` is valid 
+    /// and properly aligned before using this struct.
+    pub struct ConstRawPtr<T> 
+    where  T: Sized + Copy + Send + Sync
+    {
+        ptr: *const T,
+        memory_length: usize,
+        offset: usize,
+    }
+
+    impl<T: Sized + Copy + Send + Sync> ConstRawPtr<T> {
+        /// Creates a new `ConstRawPtr` with the given pointer, memory length, and offset.
+        /// 
+        /// This method ensures that the pointer is properly aligned and that the offset is within the bounds 
+        /// of the allocated memory length.
+        /// 
+        /// # Panics
+        /// 
+        /// Panics if the pointer is not aligned to `T` or if the offset is not within the bounds of the memory length.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let alloc_ptr: *const i32 = ...; // Assume this is a properly allocated and aligned pointer either from C or using Rust's std::alloc::alloc and std::alloc::Layout otherwise it will panic.
+        /// let ptr = ConstRawPtr::new(alloc_ptr, 1, 1);
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-        /// ```   
         #[inline]
-        pub fn const_new_ptr(ptr: *const T) -> Self {
-            Self(Box::new(ptr))
+        pub fn new(ptr: *const T, memory_length: usize, offset: usize) -> Self {
+            assert!((ptr as usize) % std::mem::align_of::<T>() == 0, "box_raw_ptr Err: Memory Not Aligned");
+            assert!(offset <= memory_length && offset > 0, "box_raw_ptr Err: Offset Is Not Within Bounds");
+            Self { ptr, memory_length, offset, }
         }
-        
-        /// Constructs a new `ConstRawPtr<T>` instance with a null constant raw pointer.
-        ///
-        /// # Example
-        ///
+
+        /// Creates a new `ConstRawPtr` with a null pointer and zero memory length and offset.
+        /// 
+        /// This is useful for creating a placeholder `ConstRawPtr` that can later be assigned a valid pointer.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let null_ptr = ConstRawPtr::<i32>::nullptr();
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let null_ptr = ConstRawPtr::nullptr();
-        /// ``` 
         #[inline]
         pub fn nullptr() -> Self {
-            Self(Box::new(std::ptr::null()))
+            Self { ptr: std::ptr::null(), memory_length: 0, offset: 0 }
         }
 
-        /// Drops the value pointed to by the constant raw pointer.
-        ///
+        /// Manually drops the `ConstRawPtr` instance.
+        /// 
         /// # Safety
         /// 
-        /// This function is inherently unsafe because it manually drops the value pointed to by the constant raw pointer.
-        /// Calling this method twice on the same value can lead to undefined behavior.
-        ///
-        /// # Example
-        ///
+        /// This function is unsafe because it drops the instance manually, which can lead to undefined behavior 
+        /// if the instance is used after being dropped.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// unsafe {
+        ///     ptr.manual_drop();
+        /// }
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-        /// unsafe { const_ptr.manual_drop() };
-        /// ```
+        #[inline]
         pub unsafe fn manual_drop(self) -> () {
             drop(self);
         }
 
-        /// Releases the constant raw pointer and returns it.
-        ///
-        /// # Example
-        ///
+        /// Checks if the current offset is within the bounds of the memory length.
+        /// 
+        /// This method ensures that the pointer is pointing to a valid position within the allocated memory block.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// assert!(ptr.check_bounds());
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let mut const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        /// let released_ptr = const_ptr.release_ptr();
-        /// ```
-        pub fn release_ptr(&mut self) -> *const T {
-            let return_ptr: *const T = *self.0;
-            *self.0 = std::ptr::null();
-            return_ptr
+        #[inline]
+        pub fn check_bounds(&self) -> bool {
+            (1..=self.memory_length).contains(&self.offset)
         }
 
-        /// Sets the constant raw pointer to null.
-        ///
-        /// # Example
-        ///
+        /// Checks if the pointer is not null and properly aligned.
+        /// 
+        /// This method ensures that the pointer is valid and meets the alignment requirements of `T`.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// assert!(ptr.check_ptr());
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let mut const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        /// const_ptr.set_null();
+        pub fn check_ptr(&self) -> bool {
+            if self.ptr.is_null() {
+                return false;
+            }
+            let align: usize = std::mem::align_of::<T>();
+            (self.ptr as usize) % align == 0
+        }
+
+        /// Returns the current offset.
+        /// 
+        /// This method provides the current offset within the memory block.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let offset = ptr.check_offset();
+        /// ```
+        pub fn check_offset(&self) -> usize {
+            self.offset
+        }
+
+        /// Returns the current memory length.
+        /// 
+        /// This method provides the total length of the memory block that the pointer points to.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let length = ptr.check_memory_length();
+        /// ```
+        pub fn check_memory_length(&self) -> usize {
+            self.memory_length
+        }
+
+        /// Changes the offset by a given index, if the resulting offset is within bounds.
+        /// 
+        /// This method allows you to move the pointer by a specified index within the memory block, 
+        /// ensuring that the new offset is within bounds.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// assert!(ptr.change_offset(2).is_some());
+        /// ```
+        pub fn change_offset(&mut self, index: isize) -> Option<()> {
+            if !self.check_ptr() {
+                return None;
+            }
+            let new_offset: isize = self.offset as isize + index;
+            if new_offset > 0 && new_offset <= self.memory_length as isize {
+                self.offset = new_offset as usize;
+                Some(())
+            } else {
+                None
+            }
+        }
+
+        /// Changes the memory length, if the new length is valid.
+        /// 
+        /// # Safety
+        /// 
+        /// This function is unsafe because it directly modifies the memory length. Ensure that the new length is 
+        /// valid and that the memory block can accommodate the new length.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// unsafe {
+        ///     assert!(ptr.change_memory_length(10).is_some());
+        /// }
+        /// ```
+        pub unsafe fn change_memory_length(&mut self, memory_length: usize) -> Option<()> {
+            if memory_length <= 0 || self.offset > memory_length || self.offset < memory_length {
+                return None;
+            }
+
+            self.memory_length = memory_length;
+            Some(())
+        }
+
+        /// Releases the pointer and returns the value it points to, if valid.
+        /// 
+        /// This method takes ownership of the pointer and returns the value it points to, ensuring that 
+        /// the pointer is valid and properly aligned.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let value = ptr.release_ptr().unwrap();
+        /// ```
+        pub fn release_ptr(self) -> Option<T> {
+            if self.check_ptr() {
+                unsafe {
+                    let ptr: T = *self.ptr;
+                    drop(self);
+                    Some(ptr)
+                }
+            } else {
+                None
+            }
+        }
+
+        /// Sets the pointer to null and resets the memory length and offset.
+        /// 
+        /// This method is useful for invalidating a pointer and ensuring that it no longer points to any memory.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// ptr.set_null();
         /// ```
         #[inline]
         pub fn set_null(&mut self) -> () {
-            *self.0 = std::ptr::null();
+            if self.check_ptr() {
+                self.memory_length = 0;
+                self.offset = 0;
+                self.ptr = std::ptr::null();
+            }
         }
 
-        /// Returns the memory address of the constant raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        /// let mem_addr = const_ptr.memory_address();
+        /// Returns the memory address of the pointer as a hexadecimal string.
+        /// 
+        /// This method is useful for debugging and logging purposes to inspect the raw memory address.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let address = ptr.memory_address();
         /// ```
         #[inline]
         pub fn memory_address(&self) -> String {
-            format!("{:x}", *self.0 as usize)
+            format!("{:x}", self.ptr as usize)
         }
 
-        /// Returns a mutable reference to the value pointed to by the constant raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::new_const_ptr(&mut value as *const i32);
-        /// let mut_ref = unsafe { &mut *const_ptr.as_mut() };
+        /// Converts the `ConstRawPtr` to a mutable pointer.
+        /// 
+        /// This method creates a mutable version of the `ConstRawPtr`, which allows for modification of the 
+        /// underlying data.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let mut_ptr = ptr.as_mut();
         /// ```
         #[inline]
         pub fn as_mut(&self) -> super::mut_raw_ptr::MutRawPtr<T> {
-            super::mut_raw_ptr::MutRawPtr::mut_new_ptr(*self.0 as *mut T)
-        }
-        
-        /// Returns the raw pointer
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        ///
-        /// assert_eq!(const_ptr.unbox_const(), &ptr_value as *const i32);
-        /// ```      
-        #[inline]
-        pub fn unbox_const(&self) -> *const T {
-            *self.0
+            super::mut_raw_ptr::MutRawPtr::new(self.ptr as *mut T, self.memory_length, self.offset)
         }
 
-        /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-        ///
-        /// # Example
-        ///
+        /// Unwraps the pointer and returns the value it points to, if valid.
+        /// 
+        /// This method returns the value that the pointer points to, ensuring that the pointer is valid and 
+        /// properly aligned.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let value = ptr.unwrap().unwrap();
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        ///
-        /// assert_eq!(const_ptr.unwrap_const(), Some(ptr_value));
-        /// ```      
-        pub fn unwrap_const(self) -> Option<T> {
-            if !self.0.is_null() {
-                Some( unsafe { **self.0 } )
+        pub fn unwrap(self) -> Option<T> {
+            if self.check_ptr() {
+                Some( unsafe { *self.ptr } )
             } else {
                 None
             }
         }
 
-        /// Returns a reference to the value pointed to by the constant raw pointer, wrapped in an `Option`.
-        /// Returns `None` if the pointer is null.
-        ///
-        /// # Example
-        ///
+        /// Returns a reference to the value the pointer points to, if valid.
+        /// 
+        /// This method provides a reference to the value that the pointer points to, ensuring that the pointer 
+        /// is valid and properly aligned.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// let reference = ptr.ref_const().unwrap();
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        ///
-        /// assert_eq!(const_ptr.ref_const(), Some(&ptr_value));
-        /// ```      
         pub fn ref_const(&self) -> Option<&T> {
-            if !self.0.is_null() {
-                Some( unsafe { & **self.0} )
+            if self.check_ptr() {
+                Some( unsafe { & *self.ptr } )
             } else {
                 None
             }
         }
 
-        /// Returns `true` if the constant raw pointer is null, `false` otherwise.
-        ///
-        /// # Example
-        ///
+        /// Checks if the pointer is null.
+        /// 
+        /// This method determines if the pointer is null, which is useful for validation and error checking.
+        /// 
+        /// # Examples
+        /// 
+        /// ```rust
+        /// assert!(ptr.is_null());
         /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let null_ptr = ConstRawPtr::<i32>::nullptr();
-        /// assert!(null_ptr.is_null());
-        ///
-        /// let ptr_value: i32 = 42;
-        /// let const_ptr = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-        /// assert!(!const_ptr.is_null());
-        /// ```      
         #[inline]
         pub fn is_null(&self) -> bool {
-            self.0.is_null()
+            self.ptr.is_null()
         }
 
-        /// Returns the size of the type `T` in bytes.
-        ///
-        /// This method retrieves the size of the type `T` in bytes using the `std::mem::size_of` function.
-        /// It can be useful for low-level operations involving memory allocation and manipulation.
-        ///
+        /// Returns the size of the type `T`.
+        /// 
+        /// This method provides the size of the type `T` in bytes, which is useful for memory allocation and 
+        /// pointer arithmetic.
+        /// 
         /// # Examples
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// // Create a ConstRawPtr pointing to an integer
-        /// let const_ptr = ConstRawPtr::<i32>::nullptr();
-        ///
-        /// // Get the size of the type
-        /// let size = const_ptr.size_of();
-        /// assert_eq!(size, 4); // Size of i32 on most platforms
+        /// 
+        /// ```rust
+        /// let size = ConstRawPtr::<i32>::size_of();
         /// ```
         #[inline]
         pub fn size_of() -> usize {
             std::mem::size_of::<T>()
         }
 
-        /// Casts the constant raw pointer to a pointer of a different type `U`.
+        /// Casts the pointer to a `ConstRawPtr` of another type `U`.
         /// 
-        /// # Safety
+        /// This method allows you to reinterpret the pointer as a different type, ensuring that the new type 
+        /// is compatible and properly aligned.
         /// 
-        /// - This function is inherently unsafe due to casting a raw pointer.
-        /// - Ensure the cast preserves memory safety and alignment requirements.
-        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        /// # Examples
         /// 
-        /// # Returns
-        /// 
-        /// An `Option` containing the casted pointer of type `*const U`.
-        /// 
-        /// # Example
-        /// 
+        /// ```rust
+        /// let new_ptr = ptr.cast_ptr::<f64>().unwrap();
         /// ```
-        /// # use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        /// # let ptr_value: i32 = 42;
-        /// # let const_ptr = ConstRawPtr::new_const_ptr(&ptr_value as *const i32);
-        /// let casted_ptr = const_ptr.cast_ptr::<u8>();
-        /// assert_eq!(casted_ptr, Some(&ptr_value as *const i32 as *const u8));
-        /// ```        
-        pub fn cast_ptr<U>(&self) -> Option<*const U> {
-            if !self.0.is_null() {
-                Some( *self.0 as *const U )
+        pub fn cast_ptr<U: Sized + Copy + Send + Sync>(&self) -> Option<ConstRawPtr<U>> {
+            if !self.ptr.is_null() {
+                Some(ConstRawPtr {
+                     ptr: self.ptr as *const U, memory_length: self.memory_length, offset: self.offset
+                })
             } else {
                 None
-            }
-        }
-
-        /// Returns a new instance of `ConstRawPtr<T>` pointing to the memory location
-        /// obtained by adding the index `idx` to the original pointer, if it is not null
-        /// and within the bounds of the provided array `arr`.
-        ///
-        /// # Arguments
-        ///
-        /// * `idx` - The index to be added to the original pointer.
-        /// * `arr` - The array slice representing the memory region.
-        ///
-        /// # Returns
-        ///
-        /// An `Option` containing the new `ConstRawPtr` instance pointing to the memory location obtained by adding the index.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let array: [i32; 3] = [1, 2, 3];
-        /// let const_ptr = ConstRawPtr::const_new_ptr(&array[0] as *const i32);
-        ///
-        /// // Get a pointer to the second element of the array
-        /// let second_elem_ptr = const_ptr.set_idx_ptr(1, &array);
-        ///
-        /// assert_eq!(second_elem_ptr.unwrap().unwrap_const(), &array[1]);
-        /// ```
-        pub fn set_idx_ptr(&self, idx: isize, arr: &[T]) -> Option<Self> {
-            if !self.0.is_null() {
-                let ptr: *const T = *self.0;
-                let _self: ConstRawPtr<T> = ConstRawPtr::const_new_ptr( unsafe { ptr.offset(idx)} );
-                
-                match _self.check_bounds(arr) {
-                    true => Some(_self),
-                    false => None,
-                }
-            } else {
-                None
-            }
-        }
-
-        /// Checks whether the constant raw pointer is within the bounds of the provided array `arr`.
-        ///
-        /// # Arguments
-        ///
-        /// * `arr` - The array slice representing the memory region.
-        ///
-        /// # Returns
-        ///
-        /// `true` if the constant raw pointer is within the bounds of the array, `false` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-        ///
-        /// let array: [i32; 3] = [1, 2, 3];
-        /// let const_ptr = ConstRawPtr::const_new_ptr(&array[0] as *const i32);
-        ///
-        /// assert!(const_ptr.check_bounds(&array));
-        /// ```
-        pub fn check_bounds(&self, arr: &[T]) -> bool {
-            if !self.0.is_null() {
-                let ptr_usize: usize = *self.0 as usize;
-                let arr_start: usize = arr.as_ptr() as usize;
-                let arr_end: usize = arr_start + (arr.len() * std::mem::size_of::<T>());
-
-                arr_start <= ptr_usize && ptr_usize < arr_end
-            } else {
-                false
             }
         }
     }
 
-    /// Implements the `Clone` trait for `ConstRawPtr<T>`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-    ///
-    /// let ptr_value: i32 = 42;
-    /// let const_ptr = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-    /// let cloned_ptr = const_ptr.clone();
-    /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> Clone for ConstRawPtr<T> {
+    impl<T: Sized + Copy + Send + Sync> Clone for ConstRawPtr<T> {
         fn clone(&self) -> Self {
-            Self(self.0.clone())
+            Self { ptr: self.ptr.clone(), memory_length: self.memory_length, offset: self.offset }
         }
     }
 
-    /// Implements the `Debug` trait for `ConstRawPtr<T>`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-    ///
-    /// let ptr_value: i32 = 42;
-    /// let const_ptr = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-    /// println!("{:?}", const_ptr);
-    /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> std::fmt::Debug for ConstRawPtr<T> {
+    impl<T: Sized + Copy + Send + Sync> std::fmt::Debug for ConstRawPtr<T> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            f.debug_tuple("ConstRawPtr").field(&self.0).finish()
+            f.debug_struct("ConstRawPtr")
+                .field("ptr", &self.ptr)
+                .field("memory_length", &self.memory_length)
+                .field("offset", &self.offset)
+                .finish()
         }
     }
 
-    /// Implements the `PartialEq` trait for `ConstRawPtr<T>`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use box_raw_ptr::const_raw_ptr::ConstRawPtr;
-    ///
-    /// let ptr_value: i32 = 42;
-    /// let const_ptr1 = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-    /// let const_ptr2 = ConstRawPtr::const_new_ptr(&ptr_value as *const i32);
-    ///
-    /// assert_eq!(const_ptr1, const_ptr2);
-    /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> PartialEq for ConstRawPtr<T> {
+    impl<T: Sized + Copy + Send + Sync> PartialEq for ConstRawPtr<T> {
         fn eq(&self, other: &Self) -> bool {
-            self.0 == other.0
+            self.ptr == other.ptr
         }
 
         fn ne(&self, other: &Self) -> bool {
-            self.0 != other.0
+            self.ptr != other.ptr
+        }
+    }
+
+    impl<T: Sized + Copy + Send + Sync> Drop for ConstRawPtr<T> {
+        fn drop(&mut self) {
+            if self.check_ptr() {
+                unsafe {
+                    let layout: std::alloc::Layout = std::alloc::Layout::new::<T>();
+                    std::alloc::dealloc(self.ptr as *mut u8, layout);
+                }
+            }
+            self.memory_length = 0;
+            self.offset = 0;
+            self.ptr = std::ptr::null();
         }
     }
 }
 
 pub mod mut_raw_ptr {
-    /// A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
-    pub struct MutRawPtr<
-            T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy
-        >(Box<*mut T>);
+    pub struct MutRawPtr<T> 
+    where  T: Sized + Copy + Send + Sync
+    {
+        ptr: *mut T,
+        memory_length: usize,
+        offset: usize,
+    }
 
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> MutRawPtr<T> {
-        /// Constructs a new `MutRawPtr<T>` instance with the given mutable raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::mut_new_ptr(&mut value as *mut i32);
-        /// ```
-        #[inline]
-        pub fn mut_new_ptr(ptr: *mut T) -> Self {
-            Self(Box::new(ptr))
-        }
-    
-        /// Constructs a new `MutRawPtr<T>` instance with a null mutable raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let null_ptr = MutRawPtr::nullptr();
-        /// ```
-        #[inline]
-        pub fn nullptr() -> Self {
-            Self(Box::new(std::ptr::null_mut()))
-        }
-
-        /// Manually drops the `MutRawPtr<T>` instance.
-        ///
-        /// # Safety
-        ///
-        /// - This function is inherently unsafe due to dropping the `MutRawPtr<T>` instance.
-        /// - Ensure that dropping the instance is appropriate and does not lead to use-after-free or memory leaks.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// unsafe { ptr.manual_drop() };
-        /// ```
-        #[inline]
-        pub unsafe fn manual_drop(self) -> () {
-            drop(self);
-        }
-
-        /// Releases the mutable raw pointer and returns a pointer to the underlying value.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// let released_ptr = ptr.release_ptr();
-        /// ```
-        pub fn release_ptr(&mut self) -> *mut T {
-            let return_ptr: *mut T = *self.0;
-            *self.0 = std::ptr::null_mut();
-            return_ptr
-        }
-
-        /// Sets the mutable raw pointer to null.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// ptr.set_null();
-        /// ```
-        #[inline]
-        pub fn set_null(&mut self) -> () {
-            *self.0 = std::ptr::null_mut();
-        }
-
-        /// Returns the memory address of the mutable raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut ptr_value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::mut_new_ptr(&mut ptr_value as *mut i32);
-        /// let mem_addr = mut_ptr.memory_address();
-        /// ```
-        #[inline]
-        pub fn memory_address(&self) -> String {
-            format!("{:x}", *self.0 as usize)
-        }
-
-        /// Casts the mutable raw pointer to a constant raw pointer.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// let const_ptr = ptr.as_const();
-        /// ```
-        #[inline]
-        pub fn as_const(&self) -> super::const_raw_ptr::ConstRawPtr<T> {
-            super::const_raw_ptr::ConstRawPtr::const_new_ptr(*self.0 as *const T)
-        }
-    
-        /// Returns the raw pointer
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        ///
-        /// assert_eq!(mut_ptr.unbox_mut(), &mut value as *mut i32);
-        /// ```
-        #[inline]
-        pub fn unbox_mut(self) -> *mut T {
-            *self.0
-        }
-
-        /// Returns the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        ///
-        /// assert_eq!(mut_ptr.unwrap_mut(), Some(value));
-        /// ```
-        pub fn unwrap_mut(self) -> Option<T> {
-            if !self.0.is_null() {
-                Some(unsafe { **self.0 })
-            } else {
-                None
-            }
-        }
-
-        /// Returns a reference to the underlying value if it is not null, wrapped in an `Option`. Returns `None` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        ///
-        /// assert_eq!(mut_ptr.ref_mut(), Some(&value));
-        /// ```
-        pub fn ref_mut(&self) -> Option<&T> {
-            if !self.0.is_null() {
-                unsafe { Some(&**self.0) }
-            } else {
-                None
-            }
-        }
-
-        /// Returns a mutable reference to the value pointed to by the mutable raw pointer, wrapped in an `Option`.
-        /// Returns `None` if the pointer is null.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        ///
-        /// assert_eq!(mut_ptr.mutref_mut(), Some(&mut value));
-        /// ```
-        pub fn mutref_mut(&self) -> Option<&mut T> {
-            if !self.0.is_null() {
-                unsafe { Some(&mut **self.0) }
-            } else {
-                None
-            }
-        }
-
-        /// Returns `true` if the mutable raw pointer is null, `false` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let null_ptr = MutRawPtr::<i32>::nullptr();
-        /// assert!(null_ptr.is_null());
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// assert!(!mut_ptr.is_null());
-        /// ```
-        #[inline]
-        pub fn is_null(&self) -> bool {
-            self.0.is_null()
-        }
-
-        /// Returns the size of the type `T` in bytes.
-        ///
-        /// This method retrieves the size of the type `T` in bytes using the `std::mem::size_of` function.
-        /// It can be useful for low-level operations involving memory allocation and manipulation.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// // Create a MutRawPtr pointing to an integer
-        /// let mut_ptr = MutRawPtr::<i32>::nullptr();
-        ///
-        /// // Get the size of the type
-        /// let size = mut_ptr.size_of();
-        /// assert_eq!(size, 4); // Size of i32 on most platforms
-        /// ```
-        #[inline]
-        pub fn size_of(&self) -> usize {
-            std::mem::size_of::<T>()
-        }
-
-        /// Casts the mutable raw pointer to a pointer of a different type `U`.
+    impl<T: Sized + Copy + Send + Sync> MutRawPtr<T> {
+        /// Creates a new `MutRawPtr` with the given pointer, memory length, and offset.
         /// 
-        /// # Safety
+        /// This method ensures that the pointer is properly aligned and that the offset is within the bounds 
+        /// of the allocated memory length.
         /// 
-        /// - This function is inherently unsafe due to casting a raw pointer.
-        /// - Ensure the cast preserves memory safety and alignment requirements.
-        /// - Null-pointer checking is performed to mitigate unsafe behavior.
+        /// # Panics
         /// 
-        /// # Returns
+        /// Panics if the pointer is not aligned to `T` or if the offset is not within the bounds of the memory length.
         /// 
-        /// An `Option` containing the casted pointer of type `*mut U`.
+        /// # Examples
         /// 
-        /// # Example
-        /// 
+        /// ```rust
+        /// let alloc_ptr: *mut i32 = ...; // Assume this is a properly allocated and aligned pointer either from C or using Rust's std::alloc::alloc and std::alloc::Layout otherwise it will panic.
+        /// let ptr = MutRawPtr::new(alloc_ptr, 1, 1);
         /// ```
-        /// # use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        /// # let mut value: i32 = 42;
-        /// # let mut mut_ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// let casted_ptr = mut_ptr.cast_ptr::<u8>();
-        /// assert_eq!(casted_ptr, Some(&mut value as *mut i32 as *mut u8));
-        /// ```       
-        pub fn cast_ptr<U>(&self) -> Option<*mut U> {
-            if !self.0.is_null() {
-                Some(*self.0 as *mut U)
-            } else {
-                None
-            }
+        #[inline]
+        pub fn new(ptr: *mut T, memory_length: usize, offset: usize) -> Self {
+            assert!((ptr as usize) % std::mem::align_of::<T>() == 0, "box_raw_ptr Err: Memory Not Aligned");
+            assert!(offset <= memory_length && offset > 0, "box_raw_ptr Err: Offset Is Not Within Bounds");
+            Self { ptr, memory_length, offset, }
         }
 
-        /// Sets the index pointer of the current `MutRawPtr<T>` instance to the memory location obtained by adding the index `idx` to the original pointer.
-        /// Checks if the resulting pointer is within the bounds of the given array `arr`.
-        ///
-        /// # Arguments
-        ///
-        /// * `idx` - The index to be added to the original pointer.
-        /// * `arr` - A reference to the array against which the bounds check is performed.
-        ///
-        /// # Returns
-        ///
-        /// An `Option` containing a new `MutRawPtr<T>` instance if the resulting pointer is within the bounds of the array, or `None` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::{mut_raw_ptr::MutRawPtr, const_raw_ptr::ConstRawPtr};
-        ///
-        /// let array: [i32; 3] = [1, 2, 3];
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut array[0] as *mut i32);
-        ///
-        /// // Get a pointer to the second element of the array
-        /// let second_elem_ptr = mut_ptr.set_idx_ptr(1, &array);
-        ///
-        /// assert!(second_elem_ptr.is_some());
-        /// ```
-        pub fn set_idx_ptr(&self, idx: isize, arr: &[T]) -> Option<Self> {
-            if !self.0.is_null() {
-                let ptr: *mut T = *self.0;
-                let _self: MutRawPtr<_> = MutRawPtr::mut_new_ptr(unsafe { ptr.offset(idx) });
-                
-                match _self.check_bounds(arr) {
-                    true => Some(_self),
-                    false => None,
-                }
-            } else {
-                None
-            }
-        }
+        /// Creates a new `MutRawPtr` with a null mutable pointer and zero memory length and offset.
+    /// 
+    /// This is useful for creating a placeholder `MutRawPtr` that can later be assigned a valid mutable pointer.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let null_ptr = MutRawPtr::<i32>::nullptr();
+    /// ```
+    #[inline]
+    pub fn nullptr() -> Self {
+        Self { ptr: std::ptr::null_mut(), memory_length: 0, offset: 0 }
+    }
 
-        /// Checks if the current `MutRawPtr<T>` instance points to a memory location within the bounds of the given array `arr`.
-        ///
-        /// # Arguments
-        ///
-        /// * `arr` - A reference to the array against which the bounds check is performed.
-        ///
-        /// # Returns
-        ///
-        /// `true` if the pointer is within the bounds of the array, `false` otherwise.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::{mut_raw_ptr::MutRawPtr, const_raw_ptr::ConstRawPtr};
-        ///
-        /// let array: [i32; 3] = [1, 2, 3];
-        /// let mut_ptr = MutRawPtr::new_mut_ptr(&mut array[0] as *mut i32);
-        ///
-        /// assert!(mut_ptr.check_bounds(&array));
-        /// ```
-        pub fn check_bounds(&self, arr: &[T]) -> bool {
-            if !self.0.is_null() {
-                let ptr_usize: usize = *self.0 as usize;
-                let arr_start: usize = arr.as_ptr() as usize;
-                let arr_end: usize = arr_start + (arr.len() * std::mem::size_of::<T>());
-                
-                arr_start <= ptr_usize && ptr_usize < arr_end
-            } else {
-                false
-            }
-        }
+    /// Manually drops the `MutRawPtr` instance.
+    /// 
+    /// # Safety
+    /// 
+    /// This function is unsafe because it drops the instance manually, which can lead to undefined behavior 
+    /// if the instance is used after being dropped.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// unsafe {
+    ///     mut_ptr.manual_drop();
+    /// }
+    /// ```
+    #[inline]
+    pub unsafe fn manual_drop(self) -> () {
+        drop(self);
+    }
 
-        /// Writes the value `src` to the memory location pointed to by the mutable raw pointer.
-        /// Returns a new instance of `MutRawPtr<*mut T>` with the same raw pointer after the write operation.
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-        ///
-        /// let mut value: i32 = 42;
-        /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-        /// ptr.write_ptr(24); // writes 24 to the memory location
-        /// ```       
-        pub fn write_ptr(&mut self, src: T) -> Option<Self> {
-            if !self.0.is_null() {
-                unsafe {
-                    std::ptr::write(*self.0, src);
-                    Some(Self(Box::new(*self.0)))
-                }
-            } else {
-                None
-            }
+    /// Checks if the current offset is within the bounds of the memory length.
+    /// 
+    /// This method ensures that the mutable pointer is pointing to a valid position within the allocated memory block.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// assert!(mut_ptr.check_bounds());
+    /// ```
+    #[inline]
+    pub fn check_bounds(&self) -> bool {
+        (1..=self.memory_length).contains(&self.offset)
+    }
+
+    /// Checks if the mutable pointer is not null and properly aligned.
+    /// 
+    /// This method ensures that the mutable pointer is valid and meets the alignment requirements of `T`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// assert!(mut_ptr.check_ptr());
+    /// ```
+    pub fn check_ptr(&self) -> bool {
+        if self.ptr.is_null() {
+            return false;
+        }
+        let align: usize = std::mem::align_of::<T>();
+        (self.ptr as usize) % align == 0
+    }
+
+    /// Returns the current offset.
+    /// 
+    /// This method provides the current offset within the memory block.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let offset = mut_ptr.check_offset();
+    /// ```
+    pub fn check_offset(&self) -> usize {
+        self.offset
+    }
+
+    /// Returns the current memory length.
+    /// 
+    /// This method provides the total length of the memory block that the mutable pointer points to.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let length = mut_ptr.check_memory_length();
+    /// ```
+    pub fn check_memory_length(&self) -> usize {
+        self.memory_length
+    }
+
+    /// Changes the offset by a given index, if the resulting offset is within bounds.
+    /// 
+    /// This method allows you to move the mutable pointer by a specified index within the memory block, 
+    /// ensuring that the new offset is within bounds.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// assert!(mut_ptr.change_offset(2).is_some());
+    /// ```
+    pub fn change_offset(&mut self, index: isize) -> Option<()> {
+        if !self.check_ptr() {
+            return None;
+        }
+        let new_offset: isize = self.offset as isize + index;
+        if new_offset > 0 && new_offset <= self.memory_length as isize {
+            self.offset = new_offset as usize;
+            Some(())
+        } else {
+            None
         }
     }
 
-    /// Implements the `Clone` trait for `MutRawPtr<T>`.
-    ///
-    /// # Example
-    ///
+    /// Changes the memory length, if the new length is valid.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// assert!(mut_ptr.change_memory_length(10).is_some());
     /// ```
-    /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-    ///
-    /// let mut value: i32 = 42;
-    /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-    /// let cloned_ptr = ptr.clone();
+    pub fn change_memory_length(&mut self, memory_length: usize) -> Option<()> {
+        if memory_length <= 0 || self.offset > memory_length {
+            return None;
+        }
+
+        self.memory_length = memory_length;
+        Some(())
+    }
+
+    /// Releases the mutable pointer and returns the value it points to, if valid.
+    /// 
+    /// This method takes ownership of the mutable pointer and returns the value it points to, ensuring that 
+    /// the pointer is valid and properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let value = mut_ptr.release_ptr().unwrap();
     /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> Clone for MutRawPtr<T> {
+    pub fn release_ptr(self) -> Option<T> {
+        if self.check_ptr() {
+            unsafe {
+                let ptr: T = *self.ptr;
+                drop(self);
+                Some(ptr)
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Sets the mutable pointer to null and resets the memory length and offset.
+    /// 
+    /// This method is useful for invalidating a mutable pointer and ensuring that it no longer points to any memory.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// mut_ptr.set_null();
+    /// ```
+    #[inline]
+    pub fn set_null(&mut self) -> () {
+        if self.check_ptr() {
+            self.memory_length = 0;
+            self.offset = 0;
+            self.ptr = std::ptr::null_mut();
+        }
+    }
+
+    /// Returns the memory address of the mutable pointer as a hexadecimal string.
+    /// 
+    /// This method is useful for debugging and logging purposes to inspect the raw memory address.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let address = mut_ptr.memory_address();
+    /// ```
+    #[inline]
+    pub fn memory_address(&self) -> String {
+        format!("{:x}", self.ptr as usize)
+    }
+
+    /// Converts the `MutRawPtr` to a constant pointer (`ConstRawPtr`).
+    /// 
+    /// This method creates a constant version of the `MutRawPtr`, which allows for read-only access to the 
+    /// underlying data.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let const_ptr = mut_ptr.as_const();
+    /// ```
+    pub fn as_const(&self) -> super::const_raw_ptr::ConstRawPtr<T> {
+        super::const_raw_ptr::ConstRawPtr::new(self.ptr as *const T, self.memory_length, self.offset)
+    }
+
+    /// Unwraps the mutable pointer and returns the value it points to, if valid.
+    /// 
+    /// This method returns the value that the mutable pointer points to, ensuring that the pointer is valid and 
+    /// properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let value = mut_ptr.unwrap().unwrap();
+    /// ```
+    pub fn unwrap(self) -> Option<T> {
+        if self.check_ptr() {
+            Some( unsafe { *self.ptr } )
+        } else {
+            None
+        }
+    }
+
+    /// Returns a reference to the value the mutable pointer points to, if valid.
+    /// 
+    /// This method provides a reference to the value that the mutable pointer points to, ensuring that the pointer 
+    /// is valid and properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let reference = mut_ptr.ref_const().unwrap();
+    /// ```
+    pub fn ref_const(&self) -> Option<&T> {
+        if self.check_ptr() {
+            Some( unsafe { & *self.ptr } )
+        } else {
+            None
+        }
+    }
+
+    /// Returns a mutable reference to the value the mutable pointer points to, if valid.
+    /// 
+    /// This method provides a mutable reference to the value that the mutable pointer points to, ensuring that 
+    /// the pointer is valid and properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let mut reference = mut_ptr.ref_mut().unwrap();
+    /// *reference = 42;
+    /// ```
+    pub fn ref_mut(&self) -> Option<&mut T> {
+        if self.check_ptr() {
+            unsafe { Some(&mut *self.ptr) }
+        } else {
+            None
+        }
+    }
+
+    /// Checks if the mutable pointer is null.
+    /// 
+    /// This method determines if the mutable pointer is null, which is useful for validation and error checking.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// assert!(mut_ptr.is_null());
+    /// ```
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    /// Returns the size of the type `T`.
+    /// 
+    /// This method provides the size of the type `T` in bytes, which is useful for memory allocation and 
+    /// pointer arithmetic.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let size = mut_ptr.size_of();
+    /// ```
+    #[inline]
+    pub fn size_of(&self) -> usize {
+        std::mem::size_of::<T>()
+    }
+
+    /// Casts the mutable pointer to a `MutRawPtr` of another type `U`.
+    /// 
+    /// This method allows you to reinterpret the mutable pointer as a different type, ensuring that the new type 
+    /// is compatible and properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// let new_ptr = mut_ptr.cast_ptr::<f64>().unwrap();
+    /// ```
+    pub fn cast_ptr<U: Sized + Copy + Send + Sync>(&self) -> Option<MutRawPtr<U>> {
+        if !self.ptr.is_null() {
+            Some(MutRawPtr {
+                ptr: self.ptr as *mut U,
+                memory_length: self.memory_length,
+                offset: self.offset,
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Writes a value into the memory location pointed to by the mutable pointer.
+    /// 
+    /// This method writes a value into the memory location pointed to by the mutable pointer, ensuring that 
+    /// the pointer is valid and properly aligned.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust
+    /// mut_ptr.write_ptr(42);
+    /// ```
+    pub fn write_ptr(&mut self, src: T) -> Option<()> {
+        if self.check_ptr() {
+            return None;
+        }
+        unsafe {
+            std::ptr::write(self.ptr, src);
+        }
+        Some(())
+        }
+    }
+
+    impl<T: Sized + Copy + Send + Sync> Clone for MutRawPtr<T> {
         fn clone(&self) -> Self {
-            Self(self.0.clone())
+            Self { ptr: self.ptr.clone(), memory_length: self.memory_length, offset: self.offset }
         }
     }
 
-    /// Implements the `Debug` trait for `MutRawPtr<T>`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-    ///
-    /// let mut value: i32 = 42;
-    /// let mut ptr = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-    /// println!("{:?}", ptr);
-    /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> std::fmt::Debug for MutRawPtr<T> {
+    impl<T: Sized + Copy + Send + Sync> std::fmt::Debug for MutRawPtr<T> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            f.debug_tuple("MutRawPtr").field(&self.0).finish()
+            f.debug_struct("MutRawPtr")
+                .field("ptr", &self.ptr)
+                .field("memory_length", &self.memory_length)
+                .field("offset", &self.offset)
+                .finish()
         }
     }
 
-    /// Implements the `PartialEq` trait for `MutRawPtr<T>`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use box_raw_ptr::mut_raw_ptr::MutRawPtr;
-    ///
-    /// let mut value: i32 = 42;
-    /// let mut ptr1 = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-    /// let mut ptr2 = MutRawPtr::new_mut_ptr(&mut value as *mut i32);
-    ///
-    /// assert_eq!(ptr1, ptr2);
-    /// ```
-    impl<T: std::fmt::Debug + std::marker::Send + std::marker::Sync + std::marker::Copy> PartialEq for MutRawPtr<T> {
+    impl<T: Sized + Copy + Send + Sync> PartialEq for MutRawPtr<T> {
         fn eq(&self, other: &Self) -> bool {
-            self.0 == other.0
+            self.ptr == other.ptr
         }
 
         fn ne(&self, other: &Self) -> bool {
-            self.0 != other.0
+            self.ptr != other.ptr
+        }
+    }
+
+    impl<T: Sized + Copy + Send + Sync> Drop for MutRawPtr<T> {
+        fn drop(&mut self) {
+            if self.check_ptr() {
+                unsafe {
+                    let layout: std::alloc::Layout = std::alloc::Layout::new::<T>();
+                    std::alloc::dealloc(self.ptr as *mut u8, layout);
+                }
+            }
+            self.memory_length = 0;
+            self.offset = 0;
+            self.ptr = std::ptr::null_mut();
         }
     }
 }
 
 #[cfg(test)]
 mod box_raw_ptr_tests {
-     use super::mut_raw_ptr::MutRawPtr;
+     use super::{const_safe_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
     #[test]
     fn c_allocator_test() -> () {
         /* Tests If Allocator Works */
-        let _ = MutRawPtr::mut_new_ptr(&mut 1 as *mut i32);
+        let alloc: *mut i32 = unsafe { std::alloc::alloc(std::alloc::Layout::new::<i32>()) as *mut i32 };
+        let _ = MutRawPtr::new(alloc, 1, 1);
+    }
+
+    #[test]
+    fn it_works() -> () {
+        // Allocate properly aligned memory for an i32
+        let alloc: *const i32 = unsafe { std::alloc::alloc(std::alloc::Layout::from_size_align(20, 4).unwrap()) as *const i32 };
+        let mut ptr: ConstRawPtr<i32> = ConstRawPtr::new(alloc, 5, 1);
+        ptr.change_offset(4).unwrap();
     }
 }
+
