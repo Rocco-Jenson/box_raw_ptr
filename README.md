@@ -50,6 +50,10 @@ fn main() {
     ptr.change_offset(4).unwrap();
 
     println!("{} : {}", ptr.unwrap().unwrap(), ptr.memory_address());
+
+    // Example: Allocate data using c_malloc
+    let alloc: *const i32 = ConstRawPtr::c_malloc(1).unwrap();
+    let _: ConstRawPtr<i32> = ConstRawPtr::new(t, 1, 1);
 }
 ```
 
@@ -69,7 +73,7 @@ Add the following to your `Cargo.toml`:
 
 [dependencies]
 
-box_raw_ptr = "2.0.1"
+box_raw_ptr = "2.0.2"
 
 ```
 
@@ -81,7 +85,7 @@ For detailed API documentation, refer to [docs.rs](https://docs.rs/box_raw_ptr/l
 
 MIT License
 
-Copyright (c) 2024 Rocco Zinedine Samuel Jenson
+Copyright (c) [2024] [Rocco Zinedine Samuel Jenson]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
