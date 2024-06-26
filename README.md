@@ -1,71 +1,102 @@
 # box_raw_ptr
 
-`box_raw_ptr` is a Rust library designed to provide safe wrappers for handling raw pointers `*const T` and `*mut T`. The library ensures memory safety by encapsulating these raw pointers within safe abstractions, leveraging Rust's ownership and borrowing rules.
-
-All heap allocations in this library utilize `malloc` and `free`, ensuring compatibility with C FFI (Foreign Function Interface). This approach allows seamless integration with C while maintaining safety through Rust's type system and ownership model. The raw pointers defined in Rust that are not imported from C will still be compatable.
-
-The `Box<T>` wrapper around the raw pointers by `box_raw_ptr` ensures that operations on raw pointers are safe and aligned with Rust's memory safety principles. This makes it easier to work with raw pointers in Rust codebases, especially when interfacing with C libraries or performing low-level memory management tasks.
-
-By combining the power of Rust's safety features with the flexibility of raw pointers, `box_raw_ptr` facilitates robust and secure memory management in Rust applications.
+box_raw_ptr is a Rust library providing safe abstractions for working with raw pointers (`*const T` and `*mut T`). It ensures proper alignment, bounds checking, and safe memory operations, inspired by Rust's safety principles while allowing interoperability with C-style memory management.
 
 ## Features
 
-- **ConstRawPtr**: A wrapper for `*const T` providing methods for safely working with constant raw pointers.
-- **MutRawPtr**: A wrapper for `*mut T` providing methods for safely working with mutable raw pointers.
+- **Type Safety**: Wrappers (`ConstRawPtr` and `MutRawPtr`) ensure safe usage of raw pointers (`*const T` and `*mut T`).
 
-## Example
+- **Bounds Checking**: Methods to check and adjust offsets within allocated memory.
+
+- **Alignment Guarantees**: Ensures pointers are aligned according to `T`.
+
+- **Memory Management**: Includes methods for deallocating memory and safely handling null pointers.
+
+- **Interoperability**: Facilitates safe interaction with memory allocated by C functions or Rust's allocator.
+
+## Components
+
+- **ConstRawPtr**: Provides safe operations on `*const T` pointers, including bounds checking and memory release.
+
+- **MutRawPtr**: Offers safe operations on `*mut T` pointers, supporting mutable access and memory management.
+
+## Usage
 
 ```rust
 use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
 
 fn main() {
-    // External C Pointer Function Example:
-    #[link(name = "example")]
+    // Example: Import C pointer and write to the allocated data
+    #[link(name = "example", kind = "static")]
     extern "C" {
-        fn get_c_ptr() -> *const libc::c_int;
+        fn c_ptr() -> *mut std::ffi::c_int;
     }
 
-    // Get Unsafe External C Pointer
-    let c_ptr: *const i32 = unsafe { get_c_ptr() };
+    let ptr: *mut i32 = unsafe { c_ptr() };
 
-    // Convert Unsafe External C Pointer To ConstRawPtr Of Type i32
-    let safe_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(c_ptr);
+    let safeptr = MutRawPtr::new(ptr, 1, 1);
 
-    // Print Value Of safe_ptr if safe_ptr is not NULL
-    // Note: .unwrap_const() returns Option<T>
-    // if safe_ptr is not null returns Some(T)
-    if let Some(ptr) = safe_ptr.unwrap_const() {
-        println!("{}", ptr);
-    }
+    safeptr.write_ptr(14).unwrap();
 
-    // Writing To MutRawPtr<T> Example:
-    let mut value: u8 = 13;
-    let mut_ptr: MutRawPtr<u8> = MutRawPtr::mut_new_ptr(&mut value as *mut u8);
+    assert_eq!(safeptr.unwrap().unwrap(), 14)
 
-    // Cast MutRawPtr<T> To type U
-    // Note: returns Option<*mut U>,
-    // returns Some(*mut U) if not NULL
-    if let Some(cast_ptr) = mut_ptr.cast_ptr::<i32>() {
-        // Writes to the mutable raw pointer
-        // Note: returns Option<Self>,
-        // returns Some(Self) if not NULL
-        if let Some(ptr) = MutRawPtr::mut_new_ptr(cast_ptr).write_ptr(20) {
-            // Print MutRawPtr Memory Address
-            println!("{}", ptr.memory_address());
-        }
-    }
+    // Example: Create a ConstRawPtr to safely handle a raw const pointer
+    // Allocate properly aligned memory for an i32
+    let alloc: *const i32 = unsafe { 
+    std::alloc::alloc(std::alloc::Layout::from_size_align(20, 4).unwrap()) as *const i32 
+    };
+    let mut ptr: ConstRawPtr<i32> = ConstRawPtr::new(alloc, 5, 1);
 
-    // Pointer Arithmetic For A [T; T] That Returns The Index Value In The Array Example:
-    let arr: [i32; 5] = [1, 2, 3, 4, 5];
+    ptr.change_offset(4).unwrap();
 
-    // Create New ConstRawPtr<i32> From The Array As A Pointer
-    let arr_ptr: ConstRawPtr<i32> = ConstRawPtr::const_new_ptr(arr.as_ptr());
-
-    // Set The Index Of The Pointer
-    // Note: .set_idx_ptr()
-    // returns None if idx is out of array bounds
-    if let Some(safe_ptr) = arr_ptr.set_idx_ptr(2, &arr) {
-        // offset of 2 from arr equals safe_ptr pointing to 3
-        assert_eq!(3, safe_ptr.unwrap_const().unwrap());
-    }
+    println!("{} : {}", ptr.unwrap().unwrap(), ptr.memory_address());
 }
+```
+
+## Safety Considerations
+
+- **Unsafe Contexts**: Use of raw pointers inherently involves unsafe operations.
+
+- **Memory Safety**: Ensure proper initialization and alignment of pointers.
+
+- **Dropping Pointers**: Manually dropping pointers can lead to undefined behavior if used afterward.
+
+## Installation
+
+Add the following to your `Cargo.toml`:
+
+```toml
+
+[dependencies]
+
+box_raw_ptr = "2.0.0"
+
+```
+
+## Documentation
+
+For detailed API documentation, refer to [docs.rs](https://docs.rs/box_raw_ptr/latest/box_raw_ptr/).
+
+## License
+
+MIT License
+
+Copyright (c) [2024] [Rocco Zinedine Samuel Jenson]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
