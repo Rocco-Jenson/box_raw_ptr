@@ -1,15 +1,17 @@
 #![allow(non_camel_case_types)]
-
 use std::alloc::{GlobalAlloc, Layout, handle_alloc_error};
+use self::c_ffi::{arch_type, c_void};
 
 /* Custom C types to remove libc dependency */
-#[cfg(target_pointer_width = "64")]
-type arch_type = u64;
+mod c_ffi {
+    #[cfg(target_pointer_width = "64")]
+    pub type arch_type = u64;
 
-#[cfg(target_pointer_width = "32")]
-type arch_type = u32;
+    #[cfg(target_pointer_width = "32")]
+    pub type arch_type = u32;
 
-type c_void = std::ffi::c_void;
+    pub type c_void = std::ffi::c_void;
+}
 
 #[link(name = "allocator", kind = "static")]
 extern "C" {
