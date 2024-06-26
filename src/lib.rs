@@ -1,3 +1,26 @@
+/*
+*       ____             ____                 ____  __      
+*      / __ )____  _  __/ __ \____ __      __/ __ \/ /______
+*     / __  / __ \| |/_/ /_/ / __ `/ | /| / / /_/ / __/ ___/
+*    / /_/ / /_/ />  </ _, _/ /_/ /| |/ |/ / ____/ /_/ /    
+*   /_____/\____/_/|_/_/ |_|\__,_/ |__/|__/_/    \__/_/     
+*                                               
+*   
+*   Copyright (c) 2024 Rocco Zinedine Samuel Jenson
+*   
+*   Licensed under the MIT License (the "License");
+*   you may not use this file except in compliance with the License.
+*   You may obtain a copy of the License at
+*
+*   https://opensource.org/licenses/MIT
+*   
+*   Unless required by applicable law or agreed to in writing, software
+*   distributed under the License is distributed on an "AS IS" BASIS,
+*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*   See the License for the specific language governing permissions and
+*   limitations under the License.
+*/
+
 //! # box_raw_ptr
 //!
 //! box_raw_ptr is a Rust library providing safe abstractions for working with raw pointers (`*const T` and `*mut T`). It ensures proper alignment, bounds checking, and safe memory operations, inspired by Rust's safety principles while allowing interoperability with C-style memory management.
