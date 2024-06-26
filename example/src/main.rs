@@ -11,12 +11,14 @@ extern "C" {
 
 fn main() {
     /* Get int* from C and convert to MutRawPtr<i32> */
-    let ptr: MutRawPtr<i32> = MutRawPtr::mut_new_ptr(unsafe {
+    let ptr: *mut i32 = unsafe {
         get_c_ptr()
-    });
+    };
+
+    let safe_ptr: MutRawPtr<i32> = MutRawPtr::new(ptr, 1, 1);
 
     /* Print memory address of C pointer and the underlying value */
-    println!("{:?} {}", ptr.memory_address(), ptr.unwrap_mut().unwrap());
+    println!("{} : {}", safe_ptr.memory_address(), safe_ptr.unwrap().unwrap());
 
     /* 
     Memory is automatically dropped using free() from the box_raw_ptr Global Allocator 
