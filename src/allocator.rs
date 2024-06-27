@@ -33,6 +33,9 @@ mod c_ffi {
     #[cfg(target_pointer_width = "32")]
     pub type arch_type = u32;
 
+    #[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
+    compile_error!("Unsupported target pointer width. Only 32-bit and 64-bit architectures are supported.");
+
     pub type c_void = std::ffi::c_void;
 }
 
