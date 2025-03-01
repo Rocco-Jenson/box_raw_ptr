@@ -37,10 +37,10 @@ fn main() {
         get_c_ptr()
     };
 
-    let safe_ptr: MutRawPtr<i32> = MutRawPtr::new(ptr, 1, 1);
+    let safeptr: MutRawPtr<i32> = MutRawPtr::new(ptr, 1, 1);
 
     /* Print memory address of C pointer and the underlying value */
-    println!("{} : {}", safe_ptr.memory_address(), safe_ptr.unwrap().unwrap());
+    println!("{} : {}", safe_ptr.memory_address(), safeptr.access().unwrap());
 
     /* 
     Memory is automatically dropped using free() from the box_raw_ptr Global Allocator 
