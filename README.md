@@ -51,7 +51,7 @@ fn main() {
     // Example: Iteratively Rewrite Values in a Block Of Data (Assuming 5 Blocks of i32)
     let mut safeptr: MutRawPtr<_> = MutRawPtr::new( unsafe { c_ptr2() }, 5, 0);
 
-    for _ in 0..=4 {
+    for i in 0..=4 {
         safeptr.change_offset(i).unwrap();
         safeptr.write_ptr(100 as i32).unwrap();
         println!("{}", safeptr.access().unwrap());
