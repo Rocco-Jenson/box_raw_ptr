@@ -23,37 +23,39 @@ box_raw_ptr is a Rust library providing safe abstractions for working with raw p
 ## Usage
 
 ```rust
-use box_raw_ptr::{const_raw_ptr::ConstRawPtr, mut_raw_ptr::MutRawPtr};
+use box_raw_ptr::mut_raw_ptr::MutRawPtr;
+
+#[link(name = "example", kind = "static")]
+extern "C" {
+    fn c_ptr() -> *mut Data;
+    fn c_ptr2() -> *mut std::ffi::c_int;
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)] /* DATA TYPE MUST HAVE COPY AND CLONE TRAITS */
+struct Data {
+    a: i32,
+    b: f64,
+}
 
 fn main() {
     // Example: Import C pointer and write to the allocated data
-    #[link(name = "example", kind = "static")]
-    extern "C" {
-        fn c_ptr() -> *mut std::ffi::c_int;
+    let mut safeptr: MutRawPtr<Data> = MutRawPtr::new(unsafe { c_ptr() }, /*# of Data Blocks*/ 1, /*offset*/ 0);
+
+    assert_eq!(16, safeptr.size_of());
+
+    safeptr.write_ptr(Data {a: 100, b: 12.0});
+
+    assert_eq!(100, (safeptr.access().unwrap()).a);
+
+    // Example: Iteratively Rewrite Values in a Block Of Data (Assuming 5 Blocks of i32)
+    let mut safeptr: MutRawPtr<_> = MutRawPtr::new( unsafe { c_ptr2() }, 5, 0);
+
+    for _ in 0..=4 {
+        safeptr.change_offset(i).unwrap();
+        safeptr.write_ptr(100 as i32).unwrap();
+        println!("{}", safeptr.access().unwrap());
     }
-
-    let ptr: *mut i32 = unsafe { c_ptr() };
-
-    let safeptr = MutRawPtr::new(ptr, 1, 1);
-
-    safeptr.write_ptr(14).unwrap();
-
-    assert_eq!(safeptr.unwrap().unwrap(), 14)
-
-    // Example: Create a ConstRawPtr to safely handle a raw const pointer
-    // Allocate properly aligned memory for an i32
-    let alloc: *const i32 = unsafe { 
-    std::alloc::alloc(std::alloc::Layout::from_size_align(20, 4).unwrap()) as *const i32 
-    };
-    let mut ptr: ConstRawPtr<i32> = ConstRawPtr::new(alloc, 5, 1);
-
-    ptr.change_offset(4).unwrap();
-
-    println!("{} : {}", ptr.unwrap().unwrap(), ptr.memory_address());
-
-    // Example: Allocate data using c_malloc
-    let alloc: *const i32 = ConstRawPtr::c_malloc(1).unwrap();
-    let _: ConstRawPtr<i32> = ConstRawPtr::new(t, 1, 1);
 }
 ```
 
@@ -73,7 +75,7 @@ Add the following to your `Cargo.toml`:
 
 [dependencies]
 
-box_raw_ptr = "2.0.2"
+box_raw_ptr = "2.1.0"
 
 ```
 
