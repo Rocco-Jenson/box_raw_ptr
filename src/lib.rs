@@ -74,7 +74,7 @@
 //!     // Example: Iteratively Rewrite Values in a Block Of Data (Assuming 5 Blocks of i32)
 //!     let mut safeptr: MutRawPtr<_> = MutRawPtr::new( unsafe { c_ptr2() }, 5, 0); // Create MutRawPtr with another C pointer
 //!
-//!     for _ in 0..=4 { // Iterate 5 times
+//!     for i in 0..=4 { // Iterate 5 times
 //!         safeptr.change_offset(i).unwrap(); // Change the offset of safeptr
 //!         safeptr.write_ptr(100 as i32).unwrap(); // Write a value (100) to the current memory location
 //!         println!("{}", safeptr.access().unwrap()); // Print the value at the current offset
