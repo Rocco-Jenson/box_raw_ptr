@@ -75,7 +75,7 @@ Add the following to your `Cargo.toml`:
 
 [dependencies]
 
-box_raw_ptr = "2.1.0"
+box_raw_ptr = "2.1.2"
 
 ```
 
