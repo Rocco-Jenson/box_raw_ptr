@@ -28,7 +28,7 @@ NOTE: Correctly specify type of file (ex: kind = "dylib" || "static") or linker 
 */
 #[link(name = "example", kind = "static")]
 extern "C" {
-    fn get_c_ptr() -> *mut i32;
+    fn get_c_ptr() -> *mut std::ffi::c_int;
 }
 
 fn main() {
@@ -37,11 +37,14 @@ fn main() {
         get_c_ptr()
     };
 
-    let safeptr: MutRawPtr<i32> = MutRawPtr::new(ptr, 1, 1);
+    let mut safeptr: MutRawPtr<i32> = MutRawPtr::new(ptr, 1, 0);
+
+    /* Write 100 to safeptr */
+    assert!(safeptr.write_ptr(100 as i32).is_some());
 
     /* Print memory address of C pointer and the underlying value */
-    println!("{} : {}", safe_ptr.memory_address(), safeptr.access().unwrap());
-
+    println!("{} -> {}", safeptr.memory_address(), safeptr.access().unwrap());
+    
     /* 
     Memory is automatically dropped using free() from the box_raw_ptr Global Allocator 
     See allocator.rs and allocator.c for implementation 
