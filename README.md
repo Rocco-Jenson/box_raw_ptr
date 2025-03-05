@@ -32,28 +32,34 @@ extern "C" {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)] /* DATA TYPE MUST HAVE COPY AND CLONE TRAITS */
+#[derive(Clone, Copy)] // This is required as MutRawPTr and ConstRawPtr require Clone and Copy
 struct Data {
     a: i32,
     b: f64,
 }
 
 fn main() {
-    // Example: Import C pointer and write to the allocated data
+    /* Example: Import C pointer and write to the allocated data */
     let mut safeptr: MutRawPtr<Data> = MutRawPtr::new(unsafe { c_ptr() }, /*# of Data Blocks*/ 1, /*offset*/ 0);
 
+    /* Assert the size of struct Data is 16 bytes (with padding on most architectures) */
     assert_eq!(16, safeptr.size_of());
 
-    safeptr.write_ptr(Data {a: 100, b: 12.0});
+    /* Confirm the output of write_ptr() is successful */
+    assert!(safeptr.write_ptr(Data {a: 100, b: 12.0}).is_some());
 
+    /* Check if struct field "a" is 100 after the write to the safeptr */
     assert_eq!(100, (safeptr.access().unwrap()).a);
 
-    // Example: Iteratively Rewrite Values in a Block Of Data (Assuming 5 Blocks of i32)
-    let mut safeptr: MutRawPtr<_> = MutRawPtr::new( unsafe { c_ptr2() }, 5, 0);
+    /* Example: Iteratively Rewrite Values in the Data memory block (Assuming 5 elements of i32) */
+    let mut safeptr: MutRawPtr<i32> = MutRawPtr::new( unsafe { c_ptr2() }, /*# of Data Blocks*/ 5, /*offset*/ 0);
 
-    for i in 0..=4 {
-        safeptr.change_offset(i).unwrap();
+    for i in 0..=4 { 
+                              /* change_offset() is byte indexed */
+        safeptr.change_offset(i * std::mem::size_of::<i32>()).unwrap();
+
         safeptr.write_ptr(100 as i32).unwrap();
+        
         println!("{}", safeptr.access().unwrap());
     }
 }
@@ -75,7 +81,7 @@ Add the following to your `Cargo.toml`:
 
 [dependencies]
 
-box_raw_ptr = "2.1.2"
+box_raw_ptr = "2.2.0"
 
 ```
 
