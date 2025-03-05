@@ -75,7 +75,8 @@
 //!     let mut safeptr: MutRawPtr<_> = MutRawPtr::new( unsafe { c_ptr2() }, 5, 0); // Create MutRawPtr with another C pointer
 //!
 //!     for i in 0..=4 { // Iterate 5 times
-//!         safeptr.change_offset(i).unwrap(); // Change the offset of safeptr
+//!                       /* change_offset() is byte indexed */
+//!         safeptr.change_offset(i * std::mem::size_of::<i32>()).unwrap();
 //!         safeptr.write_ptr(100 as i32).unwrap(); // Write a value (100) to the current memory location
 //!         println!("{}", safeptr.access().unwrap()); // Print the value at the current offset
 //!     }
@@ -97,7 +98,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! box_raw_ptr = "2.1.0"
+//! box_raw_ptr = "2.2.0"
 //! ```
 //!
 //! ## Documentation
@@ -145,7 +146,7 @@ pub mod const_raw_ptr {
     ///
     /// Fields:
     /// - `ptr: *const T`: A raw constant pointer to the data.
-    /// - `memory_length: usize`: The length of the memory block that `ptr` points to.
+    /// - `memory_length: usize`: The length of the memory block in elements of T that `ptr` points to.
     /// - `offset: usize`: The current position within the memory block.
     ///
     /// Notes:
@@ -334,7 +335,7 @@ pub mod const_raw_ptr {
             self.memory_length
         }
 
-        /// Changes the offset by a given index, if the resulting offset is within bounds.
+        /// Changes the offset by a given byte index, if the resulting offset is within bounds.
         /// 
         /// This method allows you to move the pointer by a specified index within the memory block, 
         /// ensuring that the new offset is within bounds.
@@ -344,19 +345,19 @@ pub mod const_raw_ptr {
         /// ```rust
         /// assert!(ptr.change_offset(2).is_some());
         /// ```
-        pub fn change_offset(&mut self, count: isize) -> Option<()> {
+        pub fn change_offset(&mut self, offset: isize) -> Option<()> {
             if !self.check_ptr() {
                 return None;
             }
 
-            let new_offset: isize = self.offset as isize + count;
+            let new_offset: isize = self.offset as isize + offset;
 
             if new_offset >= 0 && new_offset < self.memory_length as isize {
-                let ptr: *const T = unsafe { self.ptr.offset(count) };
-
+                let new_ptr: *const T = unsafe { self.ptr.byte_offset(offset) };
+                
                 self.offset = new_offset as usize;
-                self.ptr = ptr;
 
+                self.ptr = new_ptr;
                 Some(())
             } else {
                 None
@@ -569,7 +570,7 @@ pub mod mut_raw_ptr {
     ///
     /// Fields:
     /// - `ptr: *mut T`: A raw constant pointer to the data.
-    /// - `memory_length: usize`: The length of the memory block that `ptr` points to.
+    /// - `memory_length: usize`: The length of the memory block in elements of T that `ptr` points to.
     /// - `offset: usize`: The current position within the memory block.
     ///
     /// Notes:
@@ -758,7 +759,7 @@ pub mod mut_raw_ptr {
             self.memory_length
         }
 
-        /// Changes the offset by a given index, if the resulting offset is within bounds.
+        /// Changes the offset by a given byte index, if the resulting offset is within bounds.
         /// 
         /// This method allows you to move the mutable pointer by a specified index within the memory block, 
         /// ensuring that the new offset is within bounds.
@@ -768,15 +769,15 @@ pub mod mut_raw_ptr {
         /// ```rust
         /// assert!(mut_ptr.change_offset(2).is_some());
         /// ```
-        pub fn change_offset(&mut self, count: isize) -> Option<()> {
+        pub fn change_offset(&mut self, offset: isize) -> Option<()> {
             if !self.check_ptr() {
                 return None;
             }
 
-            let new_offset: isize = self.offset as isize + count;
+            let new_offset: isize = self.offset as isize + offset;
 
             if new_offset >= 0 && new_offset < self.memory_length as isize {
-                let new_ptr: *mut T = unsafe { self.ptr.offset(count) };
+                let new_ptr: *mut T = unsafe { self.ptr.byte_offset(offset) };
                 
                 self.offset = new_offset as usize;
 
@@ -992,7 +993,7 @@ pub mod mut_raw_ptr {
                 return None;
             }
             unsafe {
-                std::ptr::replace(self.ptr, src);
+                std::ptr::write(self.ptr, src);
             }
             Some(())
         }
