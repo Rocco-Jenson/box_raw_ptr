@@ -29,7 +29,7 @@ int* get_c_ptr() {
     /* Check if memory allocation failed */
     if (ptr == NULL) { exit(EXIT_FAILURE); }
     /* Assign value to int* ptr */
-    *ptr = 12;
+    *ptr = 1;
     /* Return ptr with assigned value */
     return ptr;
 }
